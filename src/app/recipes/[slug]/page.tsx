@@ -5,7 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ServingsScaler } from '@/components/recipe/servings-scaler';
 import { StepTracker } from '@/components/recipe/step-tracker';
+import { DeleteRecipeButton } from '@/components/recipe/delete-recipe-button';
+import { CATEGORY_LABELS } from '@/types/constants';
 import type { Recipe } from '@/types/recipe';
+import type { Category } from '@/types/constants';
 
 interface PageProps {
   params: { slug: string };
@@ -17,6 +20,7 @@ export default async function RecipeDetailPage({ params }: PageProps) {
     .from('recipes')
     .select('*')
     .eq('slug', params.slug)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (!data) notFound();
@@ -29,20 +33,23 @@ export default async function RecipeDetailPage({ params }: PageProps) {
         <div>
           <h1 className="text-2xl font-bold">{recipe.name}</h1>
           <div className="mt-1 flex items-center gap-2">
-            <Badge variant="secondary">{recipe.category}</Badge>
+            <Badge variant="secondary">{CATEGORY_LABELS[recipe.category as Category] ?? recipe.category}</Badge>
             {recipe.source && (
               <span className="text-sm text-muted-foreground">
-                Source: {recipe.source}
+                Fuente: {recipe.source}
               </span>
             )}
           </div>
         </div>
-        <Link
-          href={`/recipes/${recipe.slug}/edit`}
-          className="shrink-0 rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
-        >
-          Edit
-        </Link>
+        <div className="flex shrink-0 gap-2">
+          <Link
+            href={`/recipes/${recipe.slug}/edit`}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+          >
+            Editar
+          </Link>
+          <DeleteRecipeButton recipeId={recipe.id} recipeName={recipe.name} />
+        </div>
       </div>
 
       {recipe.tags.length > 0 && (
@@ -67,7 +74,7 @@ export default async function RecipeDetailPage({ params }: PageProps) {
 
       <Separator className="my-4" />
 
-      <h2 className="mb-3 text-lg font-semibold">Ingredients</h2>
+      <h2 className="mb-3 text-lg font-semibold">Ingredientes</h2>
       <ServingsScaler
         baseServings={recipe.servings}
         ingredients={recipe.ingredients}
@@ -80,7 +87,7 @@ export default async function RecipeDetailPage({ params }: PageProps) {
       {recipe.notes && (
         <>
           <Separator className="my-6" />
-          <h2 className="mb-2 text-lg font-semibold">Notes</h2>
+          <h2 className="mb-2 text-lg font-semibold">Notas</h2>
           <p className="whitespace-pre-wrap text-sm text-muted-foreground">
             {recipe.notes}
           </p>

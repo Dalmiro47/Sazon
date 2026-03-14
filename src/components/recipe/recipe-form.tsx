@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { upsertRecipeAction } from '@/app/actions/recipe';
-import { ALLOWED_CATEGORIES, ALLOWED_UNITS } from '@/types/constants';
+import { ALLOWED_CATEGORIES, ALLOWED_UNITS, CATEGORY_LABELS } from '@/types/constants';
+import type { Category } from '@/types/constants';
 import type { Recipe, Ingredient, RecipeStep, RecipePayload } from '@/types/recipe';
 
 interface RecipeFormProps {
@@ -122,7 +123,7 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
     const result = await upsertRecipeAction(payload);
 
     if (result.ok) {
-      toast.success(`Recipe ${result.operation}!`);
+      toast.success(result.operation === 'created' ? '¡Receta creada!' : '¡Receta actualizada!');
       router.push(`/recipes/${result.recipe.slug}`);
       router.refresh();
     } else {
@@ -137,12 +138,12 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Name */}
       <div>
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name">Nombre</Label>
         <Input
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Recipe name"
+          placeholder="Nombre de la receta"
           required
         />
         {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
@@ -150,15 +151,15 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
 
       {/* Category */}
       <div>
-        <Label>Category</Label>
+        <Label>Categoría</Label>
         <Select value={category} onValueChange={(v) => setCategory(v ?? '')}>
           <SelectTrigger>
-            <SelectValue placeholder="Select category" />
+            <SelectValue placeholder="Seleccionar categoría" />
           </SelectTrigger>
           <SelectContent>
             {ALLOWED_CATEGORIES.map((cat) => (
               <SelectItem key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {CATEGORY_LABELS[cat as Category]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -168,7 +169,7 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
 
       {/* Servings */}
       <div>
-        <Label htmlFor="servings">Servings</Label>
+        <Label htmlFor="servings">Porciones</Label>
         <Input
           id="servings"
           type="number"
@@ -185,16 +186,16 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
       {/* Ingredients */}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <Label>Ingredients</Label>
+          <Label>Ingredientes</Label>
           <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
-            + Add
+            + Agregar
           </Button>
         </div>
         <div className="space-y-2">
           {ingredients.map((ing, i) => (
             <div key={i} className="flex gap-2">
               <Input
-                placeholder="Qty"
+                placeholder="Cant."
                 type="number"
                 step="any"
                 className="w-20"
@@ -208,7 +209,7 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
                 onValueChange={(v) => updateIngredient(i, 'unit', !v || v === 'none' ? null : v)}
               >
                 <SelectTrigger className="w-24">
-                  <SelectValue placeholder="Unit" />
+                  <SelectValue placeholder="Unidad" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">—</SelectItem>
@@ -220,13 +221,13 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
                 </SelectContent>
               </Select>
               <Input
-                placeholder="Ingredient name"
+                placeholder="Nombre del ingrediente"
                 className="flex-1"
                 value={ing.name}
                 onChange={(e) => updateIngredient(i, 'name', e.target.value)}
               />
               <Input
-                placeholder="Note"
+                placeholder="Nota"
                 className="w-32"
                 value={ing.note ?? ''}
                 onChange={(e) => updateIngredient(i, 'note', e.target.value)}
@@ -258,9 +259,9 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
       {/* Steps */}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <Label>Steps</Label>
+          <Label>Pasos</Label>
           <Button type="button" variant="outline" size="sm" onClick={addStep}>
-            + Add
+            + Agregar
           </Button>
         </div>
         <div className="space-y-3">
@@ -268,7 +269,7 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
             <div key={i} className="rounded-lg border p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">
-                  Step {i + 1}
+                  Paso {i + 1}
                 </span>
                 {steps.length > 1 && (
                   <Button
@@ -277,24 +278,24 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
                     size="sm"
                     onClick={() => removeStep(i)}
                   >
-                    Remove
+                    Quitar
                   </Button>
                 )}
               </div>
               <Input
-                placeholder="Step title"
+                placeholder="Título del paso"
                 className="mb-2"
                 value={step.title}
                 onChange={(e) => updateStep(i, 'title', e.target.value)}
               />
               <Textarea
-                placeholder="Step instructions"
+                placeholder="Instrucciones del paso"
                 className="mb-2"
                 value={step.content}
                 onChange={(e) => updateStep(i, 'content', e.target.value)}
               />
               <Input
-                placeholder="Timer (seconds, optional)"
+                placeholder="Temporizador (segundos, opcional)"
                 type="number"
                 min={1}
                 max={86400}
@@ -320,10 +321,10 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
 
       {/* Tags */}
       <div>
-        <Label>Tags</Label>
+        <Label>Etiquetas</Label>
         <div className="flex gap-2">
           <Input
-            placeholder="Add a tag"
+            placeholder="Agregar etiqueta"
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={(e) => {
@@ -334,7 +335,7 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
             }}
           />
           <Button type="button" variant="outline" onClick={addTag}>
-            Add
+            Agregar
           </Button>
         </div>
         {tags.length > 0 && (
@@ -350,18 +351,18 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
 
       {/* Source */}
       <div>
-        <Label htmlFor="source">Source</Label>
+        <Label htmlFor="source">Fuente</Label>
         <Input
           id="source"
           value={source}
           onChange={(e) => setSource(e.target.value)}
-          placeholder="Where did this recipe come from?"
+          placeholder="¿De dónde viene esta receta?"
         />
       </div>
 
       {/* Image URL */}
       <div>
-        <Label htmlFor="image_url">Image URL</Label>
+        <Label htmlFor="image_url">URL de imagen</Label>
         <Input
           id="image_url"
           value={imageUrl}
@@ -372,19 +373,19 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
 
       {/* Notes */}
       <div>
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes">Notas</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Tips, variations, etc."
+          placeholder="Consejos, variaciones, etc."
           rows={4}
         />
       </div>
 
       {/* Submit */}
       <Button type="submit" disabled={submitting} className="w-full">
-        {submitting ? 'Saving...' : recipe ? 'Update recipe' : 'Create recipe'}
+        {submitting ? 'Guardando...' : recipe ? 'Actualizar receta' : 'Crear receta'}
       </Button>
     </form>
   );

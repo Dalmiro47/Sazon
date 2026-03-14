@@ -22,7 +22,7 @@ export function ServingsScaler({ baseServings, ingredients }: ServingsScalerProp
   return (
     <div>
       <div className="mb-4 flex items-center gap-3">
-        <span className="text-sm font-medium">Servings:</span>
+        <span className="text-sm font-medium">Porciones:</span>
         <Button
           variant="outline"
           size="sm"
@@ -47,7 +47,7 @@ export function ServingsScaler({ baseServings, ingredients }: ServingsScalerProp
             onClick={() => setServings(baseServings)}
             className="text-xs text-muted-foreground"
           >
-            Reset
+            Restablecer
           </Button>
         )}
       </div>
@@ -60,7 +60,7 @@ export function ServingsScaler({ baseServings, ingredients }: ServingsScalerProp
             )}
             {ing.unit && <span className="ml-1">{ing.unit}</span>}
             <span className="ml-1">{ing.name}</span>
-            {ing.qty === null && <span className="ml-1 text-muted-foreground">(to taste)</span>}
+            {ing.qty === null && <span className="ml-1 text-muted-foreground">(al gusto)</span>}
             {ing.note && (
               <span className="ml-1 text-muted-foreground">— {ing.note}</span>
             )}

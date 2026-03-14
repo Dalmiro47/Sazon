@@ -12,13 +12,13 @@ export function Nav() {
             href="/recipes/suggest"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
-            Suggest a recipe
+            Sugerir receta
           </Link>
           <Link
             href="/recipes/new"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
-            New recipe
+            Nueva receta
           </Link>
         </div>
       </nav>

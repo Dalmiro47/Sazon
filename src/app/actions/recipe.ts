@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { slugify } from '@/lib/slugify';
 import { validateRecipePayload } from '@/lib/validate-recipe';
-import type { ActionResult } from '@/types/actions';
+import type { ActionResult, DeleteResult } from '@/types/actions';
 import type { Recipe, RecipePayload } from '@/types/recipe';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -30,7 +30,7 @@ async function resolveSlug(
     candidate = `${baseSlug}-${suffix}`;
   }
 
-  throw new Error('Slug collision limit exceeded');
+  throw new Error('Se excedió el límite de colisión de slug');
 }
 
 /** Strip fields that must never be part of an UPDATE write. */
@@ -77,7 +77,7 @@ export async function upsertRecipeAction(
         return {
           ok: false,
           code: 'NOT_FOUND',
-          message: `Recipe with id '${payload.id}' not found`,
+          message: `Receta con id '${payload.id}' no encontrada`,
         };
       }
 
@@ -115,7 +115,7 @@ export async function upsertRecipeAction(
         return {
           ok: false,
           code: 'VALIDATION_ERROR',
-          message: 'name is required for creating a recipe',
+          message: 'El nombre es requerido para crear una receta',
         };
       }
 
@@ -124,7 +124,7 @@ export async function upsertRecipeAction(
         return {
           ok: false,
           code: 'VALIDATION_ERROR',
-          message: 'name must produce a valid slug',
+          message: 'El nombre debe producir un slug válido',
         };
       }
 
@@ -179,4 +179,30 @@ export async function upsertRecipeAction(
       message: err instanceof Error ? err.message : 'Unknown error',
     };
   }
+}
+
+export async function deleteRecipeAction(id: string): Promise<DeleteResult> {
+  const supabase = createClient();
+
+  const { data: existing } = await supabase
+    .from('recipes')
+    .select('id')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!existing) {
+    return { ok: false, code: 'NOT_FOUND', message: 'Receta no encontrada' };
+  }
+
+  const { error } = await supabase
+    .from('recipes')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) {
+    return { ok: false, code: 'DB_ERROR', message: error.message };
+  }
+
+  return { ok: true };
 }

@@ -54,20 +54,20 @@ export function StepTracker({ slug, steps }: StepTrackerProps) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Steps</h2>
+        <h2 className="text-lg font-semibold">Pasos</h2>
         {completed.length > 0 && (
           <button
             onClick={clearProgress}
             className="text-xs text-muted-foreground hover:text-foreground"
           >
-            Clear progress
+            Borrar progreso
           </button>
         )}
       </div>
 
       {allDone && (
         <p className="mb-3 text-sm font-medium text-green-600">
-          All steps completed!
+          ¡Todos los pasos completados!
         </p>
       )}
 
@@ -93,7 +93,7 @@ export function StepTracker({ slug, steps }: StepTrackerProps) {
                 </p>
                 {step.timer && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Timer: {step.timer >= 60 ? `${Math.floor(step.timer / 60)}m` : ''}{step.timer % 60 > 0 ? `${step.timer % 60}s` : ''}
+                    Temporizador: {step.timer >= 60 ? `${Math.floor(step.timer / 60)}m` : ''}{step.timer % 60 > 0 ? `${step.timer % 60}s` : ''}
                   </p>
                 )}
               </div>

@@ -10,7 +10,7 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Sazon',
+  title: 'Sazón',
   description: 'Recetas de DDS & Gaby',
 };
 
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={geistSans.variable}>
+    <html lang="es" className={geistSans.variable}>
       <body className="min-h-screen bg-background font-sans antialiased">
         <Nav />
         <main className="mx-auto max-w-4xl px-4 py-6">{children}</main>

@@ -75,3 +75,6 @@ Order is renormalized to [1, 2, 3, ...] server-side before every write.
 - Minimum viable plan: match the stated UX outcome with the minimum change needed
 - Do not add scope (refactors, extra configurability) unless explicitly asked
 - When proposing UX changes, separate effects/polish (welcome) from structural/layout changes (require explicit approval)
+
+## App Language
+Spanish
