@@ -1,0 +1,6 @@
+{
+  "/page": "app/page.js",
+  "/recipes/new/page": "app/recipes/new/page.js",
+  "/recipes/[slug]/page": "app/recipes/[slug]/page.js",
+  "/recipes/suggest/page": "app/recipes/suggest/page.js"
+}

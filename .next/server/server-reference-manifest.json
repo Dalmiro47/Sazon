@@ -1,0 +1,24 @@
+{
+  "node": {
+    "abbeecd5e57bae487c19cb9ab0dbd57678e716fe": {
+      "workers": {
+        "app/recipes/new/page": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fworkspaces%2FSaz-n%2Fsrc%2Fapp%2Factions%2Frecipe.ts%22%2C%5B%22upsertRecipeAction%22%5D%5D%5D&__client_imported__=true!",
+        "app/recipes/suggest/page": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fworkspaces%2FSaz-n%2Fsrc%2Fapp%2Factions%2Fsuggest-recipe.ts%22%2C%5B%22suggestRecipeAction%22%5D%5D%2C%5B%22%2Fworkspaces%2FSaz-n%2Fsrc%2Fapp%2Factions%2Frecipe.ts%22%2C%5B%22upsertRecipeAction%22%5D%5D%5D&__client_imported__=true!"
+      },
+      "layer": {
+        "app/recipes/new/page": "action-browser",
+        "app/recipes/suggest/page": "action-browser"
+      }
+    },
+    "35c419a933e706451b87c61796e4b675a2dd9e98": {
+      "workers": {
+        "app/recipes/suggest/page": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fworkspaces%2FSaz-n%2Fsrc%2Fapp%2Factions%2Fsuggest-recipe.ts%22%2C%5B%22suggestRecipeAction%22%5D%5D%2C%5B%22%2Fworkspaces%2FSaz-n%2Fsrc%2Fapp%2Factions%2Frecipe.ts%22%2C%5B%22upsertRecipeAction%22%5D%5D%5D&__client_imported__=true!"
+      },
+      "layer": {
+        "app/recipes/suggest/page": "action-browser"
+      }
+    }
+  },
+  "edge": {},
+  "encryptionKey": "gZobWPsLV12bzn5f7onve/Cg+4IMybCOhm5GB2l12F0="
+}
