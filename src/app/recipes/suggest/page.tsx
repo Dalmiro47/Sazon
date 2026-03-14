@@ -3,9 +3,9 @@ import { SuggestRecipe } from '@/components/recipe/suggest-recipe';
 export default function SuggestRecipePage() {
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">Suggest a Recipe</h1>
+      <h1 className="mb-6 text-2xl font-bold">Sugerir una Receta</h1>
       <p className="mb-4 text-muted-foreground">
-        Tell us what you have or what you&apos;re in the mood for, and we&apos;ll suggest a recipe.
+        Cuéntanos qué tienes o qué se te antoja, y te sugeriremos una receta.
       </p>
       <SuggestRecipe />
     </div>

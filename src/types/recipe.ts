@@ -28,6 +28,7 @@ export interface Recipe {
   image_url: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 /** Payload for create/update — fields are optional for partial updates */

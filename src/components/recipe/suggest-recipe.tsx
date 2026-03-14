@@ -42,7 +42,7 @@ export function SuggestRecipe() {
     const result = await upsertRecipeAction(draft);
 
     if (result.ok) {
-      toast.success('Recipe saved!');
+      toast.success('¡Receta guardada!');
       router.push(`/recipes/${result.recipe.slug}`);
       router.refresh();
     } else {
@@ -59,13 +59,13 @@ export function SuggestRecipe() {
   return (
     <div className="space-y-6">
       <div>
-        <Label htmlFor="constraint">What do you have or what are you in the mood for?</Label>
+        <Label htmlFor="constraint">¿Qué tienes o qué se te antoja?</Label>
         <div className="mt-2 flex gap-2">
           <Input
             id="constraint"
             value={constraint}
             onChange={(e) => setConstraint(e.target.value)}
-            placeholder="e.g., chicken and potatoes, something quick, vegetarian..."
+            placeholder="ej. pollo con papas, algo rápido, vegetariano..."
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -74,7 +74,7 @@ export function SuggestRecipe() {
             }}
           />
           <Button onClick={handleSuggest} disabled={loading}>
-            {loading ? 'Thinking...' : 'Suggest'}
+            {loading ? 'Pensando...' : 'Sugerir'}
           </Button>
         </div>
       </div>
@@ -101,14 +101,14 @@ export function SuggestRecipe() {
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm font-medium">
-                Servings: {draft.servings ?? 2}
+                Porciones: {draft.servings ?? 2}
               </p>
             </div>
 
             <Separator />
 
             <div>
-              <h3 className="mb-2 font-medium">Ingredients</h3>
+              <h3 className="mb-2 font-medium">Ingredientes</h3>
               <ul className="space-y-1">
                 {draft.ingredients?.map((ing, i) => (
                   <li key={i} className="text-sm">
@@ -116,7 +116,7 @@ export function SuggestRecipe() {
                     {ing.unit && <span className="ml-1">{ing.unit}</span>}
                     <span className="ml-1">{ing.name}</span>
                     {ing.qty === null && (
-                      <span className="ml-1 text-muted-foreground">(to taste)</span>
+                      <span className="ml-1 text-muted-foreground">(al gusto)</span>
                     )}
                     {ing.note && (
                       <span className="ml-1 text-muted-foreground">— {ing.note}</span>
@@ -129,7 +129,7 @@ export function SuggestRecipe() {
             <Separator />
 
             <div>
-              <h3 className="mb-2 font-medium">Steps</h3>
+              <h3 className="mb-2 font-medium">Pasos</h3>
               <ol className="space-y-2">
                 {draft.steps?.map((step) => (
                   <li key={step.order} className="text-sm">
@@ -137,7 +137,7 @@ export function SuggestRecipe() {
                     <p className="mt-0.5 text-muted-foreground">{step.content}</p>
                     {step.timer && (
                       <p className="text-xs text-muted-foreground">
-                        Timer: {step.timer >= 60 ? `${Math.floor(step.timer / 60)}m` : `${step.timer}s`}
+                        Temporizador: {step.timer >= 60 ? `${Math.floor(step.timer / 60)}m` : `${step.timer}s`}
                       </p>
                     )}
                   </li>
@@ -149,7 +149,7 @@ export function SuggestRecipe() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="mb-1 font-medium">Notes</h3>
+                  <h3 className="mb-1 font-medium">Notas</h3>
                   <p className="text-sm text-muted-foreground">{draft.notes}</p>
                 </div>
               </>
@@ -159,10 +159,10 @@ export function SuggestRecipe() {
 
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : 'Save recipe'}
+                {saving ? 'Guardando...' : 'Guardar receta'}
               </Button>
               <Button variant="outline" onClick={handleDiscard}>
-                Discard
+                Descartar
               </Button>
             </div>
           </CardContent>

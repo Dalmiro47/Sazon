@@ -14,3 +14,9 @@ export interface ActionSuccess {
 }
 
 export type ActionResult = ActionSuccess | ActionError;
+
+export interface DeleteSuccess {
+  ok: true;
+}
+
+export type DeleteResult = DeleteSuccess | ActionError;

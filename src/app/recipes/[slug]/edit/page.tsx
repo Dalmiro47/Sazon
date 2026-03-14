@@ -13,6 +13,7 @@ export default async function EditRecipePage({ params }: PageProps) {
     .from('recipes')
     .select('*')
     .eq('slug', params.slug)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (!data) notFound();
@@ -21,7 +22,7 @@ export default async function EditRecipePage({ params }: PageProps) {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">Edit: {recipe.name}</h1>
+      <h1 className="mb-6 text-2xl font-bold">Editar: {recipe.name}</h1>
       <RecipeForm recipe={recipe} />
     </div>
   );
