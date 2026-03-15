@@ -2,10 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
   startSessionAction,
@@ -168,22 +164,24 @@ export function CookingSessionPanel({ recipe }: Props) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">{recipe.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">¿Listo para cocinar?</p>
+          <h1 className="text-2xl font-bold text-[#2C2416]">{recipe.name}</h1>
+          <p className="mt-1 text-sm text-[#9C8B7A]">¿Listo para cocinar?</p>
         </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <p className="mb-4 text-sm text-muted-foreground">
-              Chatea con la IA mientras cocinas. Al final, recibirás un resumen
-              y una receta mejorada basada en lo que aprendiste.
-            </p>
-            <Button onClick={handleStart} disabled={loading} className="w-full">
-              {loading ? 'Iniciando...' : 'Empezar sesión de cocina'}
-            </Button>
-            {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-5">
+          <p className="mb-4 text-sm text-[#9C8B7A]">
+            Chatea con la IA mientras cocinas. Al final, recibirás un resumen
+            y una receta mejorada basada en lo que aprendiste.
+          </p>
+          <button
+            onClick={handleStart}
+            disabled={loading}
+            className="w-full rounded-full bg-[#5C7A3E] py-3 text-sm font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
+          >
+            {loading ? 'Iniciando...' : 'Empezar sesión de cocina'}
+          </button>
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        </div>
       </div>
     );
   }
@@ -193,8 +191,8 @@ export function CookingSessionPanel({ recipe }: Props) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium">Generando resumen...</p>
-          <p className="mt-1 text-sm text-muted-foreground">Analizando la sesión de cocina</p>
+          <p className="text-lg font-semibold text-[#2C2416]">Generando resumen...</p>
+          <p className="mt-1 text-sm text-[#9C8B7A]">Analizando la sesión de cocina</p>
         </div>
       </div>
     );
@@ -203,45 +201,43 @@ export function CookingSessionPanel({ recipe }: Props) {
   // --- REVIEW PHASE ---
   if (phase === 'review' && endResult) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-bold">Resumen de la sesión</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{recipe.name}</p>
+          <h1 className="text-2xl font-bold text-[#2C2416]">Resumen de la sesión</h1>
+          <p className="mt-1 text-sm text-[#9C8B7A]">{recipe.name}</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Resumen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{endResult.summary}</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-5">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#9C8B7A]">Resumen</p>
+          <p className="text-sm text-[#4A3F35]">{endResult.summary}</p>
+        </div>
 
         <DiffPreview current={recipe} proposed={endResult.improved_recipe} />
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button onClick={() => handleApply(false)} disabled={loading} className="flex-1">
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => handleApply(false)}
+            disabled={loading}
+            className="w-full rounded-full bg-[#5C7A3E] py-3 text-sm font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
+          >
             {loading ? 'Aplicando...' : 'Aplicar mejoras'}
-          </Button>
-          <Button
-            variant="outline"
+          </button>
+          <button
             onClick={() => handleApply(true)}
             disabled={loading}
-            className="flex-1"
+            className="w-full rounded-full border border-[#E8E0D0] bg-white py-3 text-sm font-semibold text-[#2C2416] transition-colors hover:bg-[#F5F0EB] disabled:opacity-60"
           >
             Editar antes de guardar
-          </Button>
-          <Button
-            variant="ghost"
+          </button>
+          <button
             onClick={handleKeepOriginal}
             disabled={loading}
-            className="flex-1"
+            className="w-full py-2.5 text-sm text-[#9C8B7A] transition-colors hover:text-[#2C2416] disabled:opacity-60"
           >
             Mantener original
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -251,45 +247,52 @@ export function CookingSessionPanel({ recipe }: Props) {
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       {/* Header */}
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-bold">{recipe.name}</h1>
-          <p className="text-xs text-muted-foreground">Sesión de cocina activa</p>
+      <div className="mb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-base font-bold text-[#2C2416]">{recipe.name}</h1>
+            <p className="text-xs text-[#9C8B7A]">Sesión de cocina activa</p>
+          </div>
+          <button
+            onClick={handleEnd}
+            disabled={loading}
+            className="shrink-0 rounded-full bg-[#5C7A3E] px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
+          >
+            Terminé de cocinar
+          </button>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="mt-2 flex gap-3">
+          <button
             onClick={() => setRecipeExpanded((v) => !v)}
-            className="text-xs"
+            className="text-xs font-medium text-[#5C7A3E] hover:underline"
           >
             {recipeExpanded ? 'Ocultar receta' : 'Ver receta'}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleNewSession} className="text-xs">
+          </button>
+          <button
+            onClick={handleNewSession}
+            className="text-xs font-medium text-[#9C8B7A] hover:text-[#2C2416] hover:underline"
+          >
             Nueva sesión
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleEnd} disabled={loading}>
-            Terminé de cocinar
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Collapsible recipe panel */}
       {recipeExpanded && (
-        <div className="mb-2 max-h-48 overflow-y-auto rounded-md border bg-muted/40 p-3 text-sm">
-          <p className="mb-1 font-medium">Ingredientes</p>
-          <ul className="mb-2 space-y-0.5 text-xs">
+        <div className="mb-3 max-h-48 overflow-y-auto rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-4 text-sm">
+          <p className="mb-1 font-semibold text-[#2C2416]">Ingredientes</p>
+          <ul className="mb-3 space-y-0.5 text-xs text-[#4A3F35]">
             {recipe.ingredients.map((ing, i) => (
               <li key={i}>
                 {ing.qty !== null && <span className="font-medium">{ing.qty} </span>}
                 {ing.unit && <span>{ing.unit} </span>}
                 {ing.name}
-                {ing.note && <span className="text-muted-foreground"> — {ing.note}</span>}
+                {ing.note && <span className="text-[#9C8B7A]"> — {ing.note}</span>}
               </li>
             ))}
           </ul>
-          <p className="mb-1 font-medium">Pasos</p>
-          <ol className="space-y-0.5 text-xs">
+          <p className="mb-1 font-semibold text-[#2C2416]">Pasos</p>
+          <ol className="space-y-0.5 text-xs text-[#4A3F35]">
             {recipe.steps.map((s) => (
               <li key={s.order}>
                 <span className="font-medium">{s.order}. {s.title}: </span>
@@ -301,7 +304,7 @@ export function CookingSessionPanel({ recipe }: Props) {
       )}
 
       {/* Messages */}
-      <ScrollArea className="flex-1 rounded-md border p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-4">
         <div className="space-y-3">
           {messages.map((msg, i) => (
             <div
@@ -309,10 +312,10 @@ export function CookingSessionPanel({ recipe }: Props) {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
                   msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    ? 'bg-[#5C7A3E] text-white'
+                    : 'border border-[#E8E0D0] bg-white text-[#2C2416]'
                 }`}
               >
                 {msg.role === 'assistant' ? (
@@ -325,29 +328,34 @@ export function CookingSessionPanel({ recipe }: Props) {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-[#E8E0D0] bg-white px-4 py-2.5 text-sm text-[#9C8B7A]">
                 Pensando...
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
-      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
 
+      {/* Input bar */}
       <div className="mt-3 flex gap-2">
-        <Input
+        <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Escribe tu mensaje..."
           disabled={loading}
-          className="flex-1"
+          className="flex-1 rounded-full border border-[#E8E0D0] bg-[#FAF6EF] px-4 py-2.5 text-sm outline-none placeholder:text-[#9C8B7A] focus:ring-2 focus:ring-[#5C7A3E]/40 disabled:opacity-60"
         />
-        <Button onClick={handleSend} disabled={loading || !input.trim()}>
+        <button
+          onClick={handleSend}
+          disabled={loading || !input.trim()}
+          className="rounded-full bg-[#5C7A3E] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-40"
+        >
           Enviar
-        </Button>
+        </button>
       </div>
     </div>
   );
@@ -396,7 +404,6 @@ function MarkdownText({ content }: { content: string }) {
 }
 
 function renderInline(text: string): React.ReactNode[] {
-  // Process **bold** and *italic* inline
   const parts: React.ReactNode[] = [];
   const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
   let last = 0;
@@ -474,35 +481,29 @@ function DiffPreview({
 
   if (changes.length === 0) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">No se sugirieron cambios a la receta.</p>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-5">
+        <p className="text-sm text-[#9C8B7A]">No se sugirieron cambios a la receta.</p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {changes.map((change) => (
-        <Card key={change.label}>
-          <CardHeader>
-            <CardTitle className="text-base">{change.label}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <p className="mb-1 text-xs font-medium text-muted-foreground">Actual</p>
-                <p className="whitespace-pre-wrap text-sm">{change.current}</p>
-              </div>
-              <div>
-                <Separator className="sm:hidden" />
-                <p className="mb-1 text-xs font-medium text-muted-foreground">Sugerido</p>
-                <p className="whitespace-pre-wrap text-sm">{change.proposed}</p>
-              </div>
+        <div key={change.label} className="rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#9C8B7A]">{change.label}</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <p className="mb-1 text-xs font-medium text-[#9C8B7A]">Actual</p>
+              <p className="whitespace-pre-wrap text-sm text-[#4A3F35]">{change.current}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <Separator className="mb-3 sm:hidden" />
+              <p className="mb-1 text-xs font-medium text-[#5C7A3E]">Sugerido</p>
+              <p className="whitespace-pre-wrap text-sm text-[#4A3F35]">{change.proposed}</p>
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );
