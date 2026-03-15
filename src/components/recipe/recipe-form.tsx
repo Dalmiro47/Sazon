@@ -49,6 +49,18 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
   );
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(recipe?.tags ?? []);
+  const [caloriesPerServing, setCaloriesPerServing] = useState<string>(
+    recipe?.calories_per_serving?.toString() ?? ''
+  );
+  const [proteinPerServing, setProteinPerServing] = useState<string>(
+    recipe?.protein_per_serving?.toString() ?? ''
+  );
+  const [fatPerServing, setFatPerServing] = useState<string>(
+    recipe?.fat_per_serving?.toString() ?? ''
+  );
+  const [carbsPerServing, setCarbsPerServing] = useState<string>(
+    recipe?.carbs_per_serving?.toString() ?? ''
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function addTag() {
@@ -109,6 +121,10 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
       notes: notes || null,
       image_url: imageUrl || null,
       tags,
+      calories_per_serving: caloriesPerServing ? parseFloat(caloriesPerServing) : null,
+      protein_per_serving: proteinPerServing ? parseFloat(proteinPerServing) : null,
+      fat_per_serving: fatPerServing ? parseFloat(fatPerServing) : null,
+      carbs_per_serving: carbsPerServing ? parseFloat(carbsPerServing) : null,
       ingredients: ingredients.filter((ing) => ing.name.trim()),
       steps: steps
         .filter((s) => s.title.trim() || s.content.trim())
@@ -381,6 +397,72 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
           placeholder="Consejos, variaciones, etc."
           rows={4}
         />
+      </div>
+
+      <Separator />
+
+      {/* Macros */}
+      <div>
+        <Label>Macros por porción</Label>
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div>
+            <Label htmlFor="calories" className="text-xs text-muted-foreground">
+              Calorías
+            </Label>
+            <Input
+              id="calories"
+              type="number"
+              step="any"
+              value={caloriesPerServing}
+              onChange={(e) => setCaloriesPerServing(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <Label htmlFor="protein" className="text-xs text-muted-foreground">
+              Proteína (g)
+            </Label>
+            <Input
+              id="protein"
+              type="number"
+              step="any"
+              value={proteinPerServing}
+              onChange={(e) => setProteinPerServing(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <Label htmlFor="fat" className="text-xs text-muted-foreground">
+              Grasa (g)
+            </Label>
+            <Input
+              id="fat"
+              type="number"
+              step="any"
+              value={fatPerServing}
+              onChange={(e) => setFatPerServing(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <Label htmlFor="carbs" className="text-xs text-muted-foreground">
+              Carbohidratos (g)
+            </Label>
+            <Input
+              id="carbs"
+              type="number"
+              step="any"
+              value={carbsPerServing}
+              onChange={(e) => setCarbsPerServing(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+        </div>
+        {Object.entries(errors)
+          .filter(([k]) => k.includes('_per_serving'))
+          .map(([k, v]) => (
+            <p key={k} className="mt-1 text-sm text-destructive">{v}</p>
+          ))}
       </div>
 
       {/* Submit */}

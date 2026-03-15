@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { ServingsScaler } from '@/components/recipe/servings-scaler';
 import { StepTracker } from '@/components/recipe/step-tracker';
 import { DeleteRecipeButton } from '@/components/recipe/delete-recipe-button';
+import { MacroDisplay } from '@/components/recipe/macro-display';
 import { CATEGORY_LABELS } from '@/types/constants';
 import type { Recipe } from '@/types/recipe';
 import type { Category } from '@/types/constants';
@@ -42,6 +43,12 @@ export default async function RecipeDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
+          <Link
+            href={`/recipes/${recipe.slug}/cook`}
+            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
+          >
+            Cocinar
+          </Link>
           <Link
             href={`/recipes/${recipe.slug}/edit`}
             className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
@@ -91,6 +98,22 @@ export default async function RecipeDetailPage({ params }: PageProps) {
           <p className="whitespace-pre-wrap text-sm text-muted-foreground">
             {recipe.notes}
           </p>
+        </>
+      )}
+
+      {(recipe.calories_per_serving !== null ||
+        recipe.protein_per_serving !== null ||
+        recipe.fat_per_serving !== null ||
+        recipe.carbs_per_serving !== null) && (
+        <>
+          <Separator className="my-6" />
+          <h2 className="mb-3 text-lg font-semibold">Macros por porción</h2>
+          <MacroDisplay
+            calories_per_serving={recipe.calories_per_serving}
+            protein_per_serving={recipe.protein_per_serving}
+            fat_per_serving={recipe.fat_per_serving}
+            carbs_per_serving={recipe.carbs_per_serving}
+          />
         </>
       )}
     </div>
