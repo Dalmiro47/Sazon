@@ -3,14 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { suggestRecipeAction } from '@/app/actions/suggest-recipe';
 import { upsertRecipeAction } from '@/app/actions/recipe';
+import { CATEGORY_LABELS } from '@/types/constants';
+import type { Category } from '@/types/constants';
 import type { RecipePayload } from '@/types/recipe';
 
 export function SuggestRecipe() {
@@ -57,12 +54,14 @@ export function SuggestRecipe() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Input row */}
       <div>
-        <Label htmlFor="constraint">¿Qué tienes o qué se te antoja?</Label>
-        <div className="mt-2 flex gap-2">
-          <Input
-            id="constraint"
+        <label className="mb-1 block text-sm font-semibold text-[#2C2416]">
+          ¿Qué tienes o qué se te antoja?
+        </label>
+        <div className="flex gap-2">
+          <input
             value={constraint}
             onChange={(e) => setConstraint(e.target.value)}
             placeholder="ej. pollo con papas, algo rápido, vegetariano..."
@@ -72,85 +71,103 @@ export function SuggestRecipe() {
                 handleSuggest();
               }
             }}
+            className="flex-1 rounded-xl border border-[#E8E0D0] bg-[#F5F0EB] px-3 py-2 text-sm text-[#2C2416] outline-none placeholder:text-[#9C8B7A] focus:ring-2 focus:ring-[#5C7A3E]/40"
           />
-          <Button onClick={handleSuggest} disabled={loading}>
+          <button
+            onClick={handleSuggest}
+            disabled={loading}
+            className="rounded-full bg-[#5C7A3E] px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
+          >
             {loading ? 'Pensando...' : 'Sugerir'}
-          </Button>
+          </button>
         </div>
       </div>
 
+      {/* Draft preview — matches recipe detail dialog style */}
       {draft && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between gap-2">
-              <CardTitle>{draft.name}</CardTitle>
+        <div className="rounded-2xl border border-[#E8E0D0]">
+          {/* Header */}
+          <div className="px-5 pb-3 pt-4">
+            <div className="flex items-start justify-between gap-3 pr-2">
+              <h2 className="text-lg font-bold text-[#2C2416]">{draft.name}</h2>
               {draft.category && (
-                <Badge variant="secondary">{draft.category}</Badge>
+                <span className="shrink-0 rounded-full bg-[#5C7A3E] px-3 py-0.5 text-xs font-medium text-white">
+                  {CATEGORY_LABELS[draft.category as Category] ?? draft.category}
+                </span>
               )}
             </div>
             {draft.tags && draft.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <div className="mt-2 flex flex-wrap gap-1">
                 {draft.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
+                  <span
+                    key={tag}
+                    className="rounded-full bg-[#F0EAD6] px-2.5 py-0.5 text-xs font-medium text-[#5C7A3E]"
+                  >
                     {tag}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-medium">
-                Porciones: {draft.servings ?? 2}
-              </p>
-            </div>
+          </div>
 
-            <Separator />
+          {/* Body */}
+          <div className="space-y-4 px-5 pb-4">
+            <p className="text-xs text-[#9C8B7A]">{draft.servings ?? 2} porciones</p>
 
-            <div>
-              <h3 className="mb-2 font-medium">Ingredientes</h3>
-              <ul className="space-y-1">
-                {draft.ingredients?.map((ing, i) => (
-                  <li key={i} className="text-sm">
-                    {ing.qty !== null && <span className="font-medium">{ing.qty}</span>}
-                    {ing.unit && <span className="ml-1">{ing.unit}</span>}
-                    <span className="ml-1">{ing.name}</span>
-                    {ing.qty === null && (
-                      <span className="ml-1 text-muted-foreground">(al gusto)</span>
-                    )}
-                    {ing.note && (
-                      <span className="ml-1 text-muted-foreground">— {ing.note}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {draft.ingredients && draft.ingredients.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="mb-2 font-semibold text-[#2C2416]">Ingredientes</h3>
+                  <ul className="space-y-1.5">
+                    {draft.ingredients.map((ing, i) => (
+                      <li key={i} className="text-sm text-[#4A3F35]">
+                        {ing.qty !== null && <span className="font-medium">{ing.qty}</span>}
+                        {ing.unit && <span className="ml-1">{ing.unit}</span>}
+                        <span className="ml-1">{ing.name}</span>
+                        {ing.qty === null && (
+                          <span className="ml-1 text-[#9C8B7A]">(al gusto)</span>
+                        )}
+                        {ing.note && (
+                          <span className="ml-1 text-[#9C8B7A]">— {ing.note}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
 
-            <Separator />
-
-            <div>
-              <h3 className="mb-2 font-medium">Pasos</h3>
-              <ol className="space-y-2">
-                {draft.steps?.map((step) => (
-                  <li key={step.order} className="text-sm">
-                    <span className="font-medium">{step.order}. {step.title}</span>
-                    <p className="mt-0.5 text-muted-foreground">{step.content}</p>
-                    {step.timer && (
-                      <p className="text-xs text-muted-foreground">
-                        Temporizador: {step.timer >= 60 ? `${Math.floor(step.timer / 60)}m` : `${step.timer}s`}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
+            {draft.steps && draft.steps.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="mb-2 font-semibold text-[#2C2416]">Pasos</h3>
+                  <ol className="space-y-3">
+                    {draft.steps.map((step) => (
+                      <li key={step.order} className="text-sm">
+                        <p className="font-medium text-[#2C2416]">
+                          {step.order}. {step.title}
+                        </p>
+                        <p className="mt-0.5 text-[#4A3F35]">{step.content}</p>
+                        {step.timer && (
+                          <p className="mt-0.5 text-xs text-[#9C8B7A]">
+                            Temporizador: {step.timer >= 60 ? `${Math.floor(step.timer / 60)}m` : `${step.timer}s`}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </>
+            )}
 
             {draft.notes && (
               <>
                 <Separator />
                 <div>
-                  <h3 className="mb-1 font-medium">Notas</h3>
-                  <p className="text-sm text-muted-foreground">{draft.notes}</p>
+                  <h3 className="mb-1 font-semibold text-[#2C2416]">Notas</h3>
+                  <p className="text-sm text-[#4A3F35]">{draft.notes}</p>
                 </div>
               </>
             )}
@@ -162,26 +179,26 @@ export function SuggestRecipe() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="mb-2 font-medium">Macros por porción</h3>
-                  <div className="flex flex-wrap gap-3">
+                  <h3 className="mb-2 font-semibold text-[#2C2416]">Macros por porción</h3>
+                  <div className="flex flex-wrap gap-2">
                     {draft.calories_per_serving != null && (
-                      <span className="rounded-md border px-2 py-1 text-sm">
-                        Calorías: <span className="font-medium">{draft.calories_per_serving}</span>
+                      <span className="rounded-full bg-[#F0EAD6] px-3 py-0.5 text-xs font-medium text-[#5C7A3E]">
+                        {draft.calories_per_serving} kcal
                       </span>
                     )}
                     {draft.protein_per_serving != null && (
-                      <span className="rounded-md border px-2 py-1 text-sm">
-                        Proteína: <span className="font-medium">{draft.protein_per_serving}g</span>
+                      <span className="rounded-full bg-[#F0EAD6] px-3 py-0.5 text-xs font-medium text-[#5C7A3E]">
+                        {draft.protein_per_serving}g proteína
                       </span>
                     )}
                     {draft.fat_per_serving != null && (
-                      <span className="rounded-md border px-2 py-1 text-sm">
-                        Grasa: <span className="font-medium">{draft.fat_per_serving}g</span>
+                      <span className="rounded-full bg-[#F0EAD6] px-3 py-0.5 text-xs font-medium text-[#5C7A3E]">
+                        {draft.fat_per_serving}g grasa
                       </span>
                     )}
                     {draft.carbs_per_serving != null && (
-                      <span className="rounded-md border px-2 py-1 text-sm">
-                        Carbos: <span className="font-medium">{draft.carbs_per_serving}g</span>
+                      <span className="rounded-full bg-[#F0EAD6] px-3 py-0.5 text-xs font-medium text-[#5C7A3E]">
+                        {draft.carbs_per_serving}g carbos
                       </span>
                     )}
                   </div>
@@ -191,16 +208,24 @@ export function SuggestRecipe() {
 
             <Separator />
 
+            {/* Actions */}
             <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={saving}>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 rounded-full bg-[#5C7A3E] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
+              >
                 {saving ? 'Guardando...' : 'Guardar receta'}
-              </Button>
-              <Button variant="outline" onClick={handleDiscard}>
+              </button>
+              <button
+                onClick={handleDiscard}
+                className="rounded-full border border-[#E8E0D0] bg-[#F5F0EB] px-4 py-2.5 text-sm font-semibold text-[#2C2416] transition-colors hover:bg-[#E8E0D0]"
+              >
                 Descartar
-              </Button>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );
