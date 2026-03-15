@@ -1,6 +1,6 @@
 'use server';
 
-import OpenAI from 'openai';
+import { createGroqClient, GROQ_MODEL } from '@/lib/groq';
 import { createClient } from '@/lib/supabase/server';
 import type { RecipePayload } from '@/types/recipe';
 import { ALLOWED_CATEGORIES, ALLOWED_UNITS } from '@/types/constants';
@@ -18,14 +18,12 @@ interface SuggestError {
 export async function suggestRecipeAction(
   constraint: string
 ): Promise<SuggestResult | SuggestError> {
-  if (!process.env.GROK_API_KEY) {
-    return { ok: false, message: 'La clave de API de Grok no está configurada' };
+  let grok: ReturnType<typeof createGroqClient>;
+  try {
+    grok = createGroqClient();
+  } catch {
+    return { ok: false, message: 'La clave de API no está configurada' };
   }
-
-  const grok = new OpenAI({
-    apiKey: process.env.GROK_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-  });
 
   // Fetch existing recipes for context (avoid duplicates)
   const supabase = createClient();
@@ -47,7 +45,11 @@ export async function suggestRecipeAction(
   "steps": [{ "order": 1, "title": "string en español", "content": "string en español", "timer": optional_seconds }],
   "tags": ["strings en español, lowercase"],
   "notes": "optional tips en español",
-  "source": "Sugerida por IA"
+  "source": "Sugerida por IA",
+  "calories_per_serving": number,
+  "protein_per_serving": number (gramos),
+  "fat_per_serving": number (gramos),
+  "carbs_per_serving": number (gramos)
 }
 Reglas:
 - Si qty es null, unit también debe ser null (significa "al gusto")
@@ -58,7 +60,7 @@ Reglas:
 
   try {
     const response = await grok.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         {
@@ -71,7 +73,7 @@ Reglas:
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
-      return { ok: false, message: 'Sin respuesta de Grok' };
+      return { ok: false, message: 'Sin respuesta del modelo' };
     }
 
     // Parse JSON — handle potential markdown fences

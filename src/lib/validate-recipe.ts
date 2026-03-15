@@ -219,6 +219,25 @@ export function validateRecipePayload(
     }
   }
 
+  // --- macros ---
+  const macroFields = [
+    'calories_per_serving',
+    'protein_per_serving',
+    'fat_per_serving',
+    'carbs_per_serving',
+  ] as const;
+
+  for (const field of macroFields) {
+    const val = payload[field];
+    if (val !== undefined) {
+      if (val !== null && (typeof val !== 'number' || val < 0)) {
+        errors[field] = 'Debe ser un número mayor o igual a 0';
+      } else {
+        cleaned[field] = val;
+      }
+    }
+  }
+
   // --- return ---
   const errorCount = Object.keys(errors).length;
   if (errorCount > 0) {

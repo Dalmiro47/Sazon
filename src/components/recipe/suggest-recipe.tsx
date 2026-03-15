@@ -155,6 +155,40 @@ export function SuggestRecipe() {
               </>
             )}
 
+            {(draft.calories_per_serving != null ||
+              draft.protein_per_serving != null ||
+              draft.fat_per_serving != null ||
+              draft.carbs_per_serving != null) && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="mb-2 font-medium">Macros por porción</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {draft.calories_per_serving != null && (
+                      <span className="rounded-md border px-2 py-1 text-sm">
+                        Calorías: <span className="font-medium">{draft.calories_per_serving}</span>
+                      </span>
+                    )}
+                    {draft.protein_per_serving != null && (
+                      <span className="rounded-md border px-2 py-1 text-sm">
+                        Proteína: <span className="font-medium">{draft.protein_per_serving}g</span>
+                      </span>
+                    )}
+                    {draft.fat_per_serving != null && (
+                      <span className="rounded-md border px-2 py-1 text-sm">
+                        Grasa: <span className="font-medium">{draft.fat_per_serving}g</span>
+                      </span>
+                    )}
+                    {draft.carbs_per_serving != null && (
+                      <span className="rounded-md border px-2 py-1 text-sm">
+                        Carbos: <span className="font-medium">{draft.carbs_per_serving}g</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
             <Separator />
 
             <div className="flex gap-2">
