@@ -11,3 +11,4 @@ export function createGroqClient(): OpenAI {
 }
 
 export const GROQ_MODEL = 'llama-3.3-70b-versatile';
+export const GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';

@@ -29,7 +29,7 @@ export function CookingSessionPanel({ recipe }: Props) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [endResult, setEndResult] = useState<SessionEndResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [recipeExpanded, setRecipeExpanded] = useState(false);
+  const [recipeExpanded, setRecipeExpanded] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Resume session from localStorage on mount
@@ -73,12 +73,6 @@ export function CookingSessionPanel({ recipe }: Props) {
     setPhase('chatting');
   }
 
-  function handleNewSession() {
-    localStorage.removeItem(SESSION_STORAGE_KEY(recipe.id));
-    setSessionId(null);
-    setMessages([]);
-    setPhase('idle');
-  }
 
   const handleSend = useCallback(async () => {
     if (!sessionId || !input.trim() || loading) return;
@@ -162,23 +156,23 @@ export function CookingSessionPanel({ recipe }: Props) {
   // --- IDLE PHASE ---
   if (phase === 'idle') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#2C2416]">{recipe.name}</h1>
-          <p className="mt-1 text-sm text-[#9C8B7A]">¿Listo para cocinar?</p>
+          <p className="text-sm text-[#9C8B7A]">¿Listo para cocinar?</p>
         </div>
 
         <div className="rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-5">
           <p className="mb-4 text-sm text-[#9C8B7A]">
-            Chatea con la IA mientras cocinas. Al final, recibirás un resumen
-            y una receta mejorada basada en lo que aprendiste.
+            🎉 Chatea con tu asistente de cocina mientras preparas esta receta.
+            Haz preguntas, reporta lo que sale bien, y al final recibirás un
+            resumen con una receta mejorada basada en tu experiencia.
           </p>
           <button
             onClick={handleStart}
             disabled={loading}
             className="w-full rounded-full bg-[#5C7A3E] py-3 text-sm font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
           >
-            {loading ? 'Iniciando...' : 'Empezar sesión de cocina'}
+            {loading ? 'Iniciando...' : '🍳 Empezar sesión de cocina'}
           </button>
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         </div>
@@ -248,31 +242,19 @@ export function CookingSessionPanel({ recipe }: Props) {
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       {/* Header */}
       <div className="mb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h1 className="text-base font-bold text-[#2C2416]">{recipe.name}</h1>
-            <p className="text-xs text-[#9C8B7A]">Sesión de cocina activa</p>
-          </div>
-          <button
-            onClick={handleEnd}
-            disabled={loading}
-            className="shrink-0 rounded-full bg-[#5C7A3E] px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
-          >
-            Terminé de cocinar
-          </button>
-        </div>
-        <div className="mt-2 flex gap-3">
+        <button
+          onClick={handleEnd}
+          disabled={loading}
+          className="shrink-0 rounded-full bg-[#5C7A3E] px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
+        >
+          Terminé de cocinar
+        </button>
+        <div className="mt-2">
           <button
             onClick={() => setRecipeExpanded((v) => !v)}
             className="text-xs font-medium text-[#5C7A3E] hover:underline"
           >
             {recipeExpanded ? 'Ocultar receta' : 'Ver receta'}
-          </button>
-          <button
-            onClick={handleNewSession}
-            className="text-xs font-medium text-[#9C8B7A] hover:text-[#2C2416] hover:underline"
-          >
-            Nueva sesión
           </button>
         </div>
       </div>
@@ -315,7 +297,7 @@ export function CookingSessionPanel({ recipe }: Props) {
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
                   msg.role === 'user'
                     ? 'bg-[#5C7A3E] text-white'
-                    : 'border border-[#E8E0D0] bg-white text-[#2C2416]'
+                    : 'border border-[#E8E0D0] bg-[#FEF9F4] text-[#2C2416]'
                 }`}
               >
                 {msg.role === 'assistant' ? (
@@ -328,8 +310,8 @@ export function CookingSessionPanel({ recipe }: Props) {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-2xl border border-[#E8E0D0] bg-white px-4 py-2.5 text-sm text-[#9C8B7A]">
-                Pensando...
+              <div className="rounded-2xl border border-[#E8E0D0] bg-[#FEF9F4] px-4 py-2.5 text-sm text-[#9C8B7A]">
+                Pensando... 🤔
               </div>
             </div>
           )}

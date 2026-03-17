@@ -13,13 +13,14 @@ npx tsc --noEmit && npm run lint  # Full pre-commit validation
 - Next.js 14 App Router + TypeScript + Tailwind CSS
 - Supabase (shared instance with Open Brain project)
 - Shadcn UI (components in src/components/ui/)
-- Grok API (via OpenAI SDK) for AI recipe suggestions
+- Groq API (via OpenAI SDK) — text model: `llama-3.3-70b-versatile`, vision model: `meta-llama/llama-4-scout-17b-16e-instruct`
 
 ## Coding Standards
 - No `any` — use interfaces from `src/types/`
 - Absolute imports — use `@/components/...`, `@/lib/...`, `@/types/...`
 - Server Components by default — add `'use client'` only for hooks/event listeners
 - Shadcn UI: add components via `npx shadcn@latest add [component-name]`; icon size standard is `size={20}`
+- Radix Select bug: never set initial value via `useEffect` + `setState` — Radix fixes its internal state on first render. Use `useState(() => ...)` lazy initializer to read from localStorage/props synchronously before first render.
 - Mobile-first: design for 375px+, then adapt with `md:` / `lg:` Tailwind prefixes
 - TypeScript check before done: always run `npx tsc --noEmit` before declaring a task complete
 
@@ -93,6 +94,15 @@ Order is renormalized to [1, 2, 3, ...] server-side before every write.
 - Active cooking session is persisted in `localStorage` key `cooking-session-{recipeId}` — auto-resumed on page load, cleared when session ends
 - Previous session summaries for the same recipe are injected into the AI system prompt so knowledge accumulates across cooks
 - Markdown in AI chat responses is rendered via a custom inline renderer (no library) — handles `**bold**`, `*italic*`, bullet/numbered lists
+- `sanitizeImportedRecipe()` in `src/lib/sanitize-import.ts` is the single post-processing step for all AI-extracted recipes — normalizes units, categories, and filters empty rows; always call it after JSON.parse in import actions
+- Imported recipe draft is passed to RecipeForm via `localStorage` key `import-recipe-draft` — set before `router.push('/recipes/new')`, read+cleared on mount (only when `recipe` prop is undefined)
+- AI always assigns `"fit"` or `"fat"` tag to every recipe (import + suggest) — "fit" = low cal/high protein, "fat" = indulgent/high fat; grid has filter chips for both
+
+## Recipe Import (`/recipes/import`)
+- Three input modes — Foto (vision model, base64 ≤ 4MB), Enlace (server-side fetch + HTML strip), Texto (raw paste ≤ 10k chars)
+- `next.config.mjs` sets `serverActions.bodySizeLimit: '5mb'` for image payloads
+- Shared prompt in `src/lib/import-recipe-prompt.ts` — same schema for all 3 modes; always estimates macros and assigns fit/fat tag
+- HTML stripping for URLs via `src/lib/html-to-text.ts` (no npm dep, truncates at 8000 chars)
 
 ## Constraints (non-negotiable)
 - Constraints are hard guardrails, not problems to solve
@@ -109,7 +119,7 @@ Order is renormalized to [1, 2, 3, ...] server-side before every write.
 - Screenshot approach is prohibited: Claude reads test output directly, no human review loop needed
 
 ## App Language
-Spanish
+All user-facing text in the app must be in Spanish — UI labels, buttons, error messages, validation feedback, placeholder text, and toast notifications. Code comments and variable names remain in English.
 
 ## Custom Commands
 - `/playwright` — runs Playwright test suite for current feature; creates spec if none exists; auto-corrects until all pass
@@ -119,3 +129,18 @@ Spanish
 1. Work on feature/fix
 2. Run `/playwright` when implementation is done
 3. Run `/brain-sync` before ending the session
+
+## Agent Guardrails (non-negotiable)
+Keep this file between 200–300 lines max. Every line must earn its keep.
+
+### Error Handling
+- Every server call must handle failure with a clear, friendly Spanish message — never a blank screen or unhandled crash
+- Loading states must always be visible to the user during async operations
+
+### Security
+- Row-level security must be enabled — each user may only access their own data
+- Never log user emails, session data, or any PII to console or external services
+- Secret keys and service role keys must live in environment variables only — never in source code or chat
+
+### Scale Expectation
+- This is a household app (1–5 users). Do not over-engineer for scale. Optimize for simplicity and readability over performance

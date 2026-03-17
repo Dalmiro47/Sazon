@@ -3,16 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  MobileDialog,
+  MobileDialogContent,
+  MobileDialogHeader,
+  MobileDialogTitle,
+} from '@/components/ui/mobile-dialog';
 import { deleteRecipeAction } from '@/app/actions/recipe';
 
 interface DeleteRecipeButtonProps {
@@ -43,32 +40,41 @@ export function DeleteRecipeButton({ recipeId, recipeName }: DeleteRecipeButtonP
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          Eliminar
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>¿Eliminar receta?</DialogTitle>
-          <DialogDescription>
-            ¿Estás seguro de que quieres eliminar &quot;{recipeName}&quot;? La receta dejará de aparecer pero la información no se perderá.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={deleting}>
-            Cancelar
-          </Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-            {deleting ? 'Eliminando...' : 'Eliminar'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-50"
+      >
+        <Trash2 size={14} />
+        Eliminar
+      </button>
+
+      <MobileDialog open={open} onOpenChange={setOpen}>
+        <MobileDialogContent position="center">
+          <MobileDialogHeader>
+            <MobileDialogTitle>¿Eliminar receta?</MobileDialogTitle>
+            <p className="mt-2 text-sm text-[#9C8B7A]">
+              ¿Estás seguro de que quieres eliminar &quot;{recipeName}&quot;? La receta dejará de aparecer pero la información no se perderá.
+            </p>
+          </MobileDialogHeader>
+          <div className="flex gap-2 px-5 pb-5">
+            <button
+              onClick={() => setOpen(false)}
+              disabled={deleting}
+              className="flex-1 rounded-full border border-[#E8E0D0] bg-[#F5F0EB] py-2.5 text-sm font-semibold text-[#2C2416] transition-colors hover:bg-[#E8E0D0] disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex-1 rounded-full bg-red-500 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-60"
+            >
+              {deleting ? 'Eliminando...' : 'Eliminar'}
+            </button>
+          </div>
+        </MobileDialogContent>
+      </MobileDialog>
+    </>
   );
 }

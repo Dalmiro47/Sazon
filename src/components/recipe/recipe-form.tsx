@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
@@ -30,45 +30,59 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  const [name, setName] = useState(recipe?.name ?? '');
-  const [category, setCategory] = useState(recipe?.category ?? '');
-  const [servings, setServings] = useState(recipe?.servings ?? 2);
-  const [source, setSource] = useState(recipe?.source ?? '');
-  const [notes, setNotes] = useState(recipe?.notes ?? '');
-  const [imageUrl, setImageUrl] = useState(recipe?.image_url ?? '');
+  // Read import draft synchronously before first render so every useState below
+  // initializes with the correct value — avoids Radix Select timing issues.
+  const [importDraft] = useState<RecipePayload | null>(() => {
+    if (recipe || typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('import-recipe-draft');
+      if (!raw) return null;
+      localStorage.removeItem('import-recipe-draft');
+      return JSON.parse(raw) as RecipePayload;
+    } catch {
+      return null;
+    }
+  });
+
+  const d = importDraft; // shorthand
+
+  const [name, setName] = useState(d?.name ?? recipe?.name ?? '');
+  const [category, setCategory] = useState(d?.category ?? recipe?.category ?? '');
+  const [servings, setServings] = useState(d?.servings ?? recipe?.servings ?? 2);
+  const [source, setSource] = useState(d?.source ?? recipe?.source ?? '');
+  const [notes, setNotes] = useState(d?.notes ?? recipe?.notes ?? '');
+  const [fitFat, setFitFat] = useState<'fit' | 'fat' | null>(() => {
+    const t = d?.tags ?? recipe?.tags ?? [];
+    if (t.includes('fit')) return 'fit';
+    if (t.includes('fat')) return 'fat';
+    return null;
+  });
   const [ingredients, setIngredients] = useState<Ingredient[]>(
+    d?.ingredients?.length ? d.ingredients :
     recipe?.ingredients?.length ? recipe.ingredients : [{ ...EMPTY_INGREDIENT }]
   );
   const [steps, setSteps] = useState<RecipeStep[]>(
+    d?.steps?.length ? d.steps.map((s, i) => ({ ...s, order: i + 1 })) :
     recipe?.steps?.length ? recipe.steps : [{ ...EMPTY_STEP, order: 1 }]
   );
-  const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState<string[]>(recipe?.tags ?? []);
   const [caloriesPerServing, setCaloriesPerServing] = useState<string>(
-    recipe?.calories_per_serving?.toString() ?? ''
+    d?.calories_per_serving?.toString() ?? recipe?.calories_per_serving?.toString() ?? ''
   );
   const [proteinPerServing, setProteinPerServing] = useState<string>(
-    recipe?.protein_per_serving?.toString() ?? ''
+    d?.protein_per_serving?.toString() ?? recipe?.protein_per_serving?.toString() ?? ''
   );
   const [fatPerServing, setFatPerServing] = useState<string>(
-    recipe?.fat_per_serving?.toString() ?? ''
+    d?.fat_per_serving?.toString() ?? recipe?.fat_per_serving?.toString() ?? ''
   );
   const [carbsPerServing, setCarbsPerServing] = useState<string>(
-    recipe?.carbs_per_serving?.toString() ?? ''
+    d?.carbs_per_serving?.toString() ?? recipe?.carbs_per_serving?.toString() ?? ''
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  function addTag() {
-    const tag = tagInput.trim().toLowerCase();
-    if (tag && !tags.includes(tag) && tags.length < 20) {
-      setTags([...tags, tag]);
-      setTagInput('');
-    }
-  }
-
-  function removeTag(tag: string) {
-    setTags(tags.filter((t) => t !== tag));
-  }
+  // Toast after mount (can't call toast during render)
+  useEffect(() => {
+    if (importDraft) toast.success('Receta importada. Revisa y ajusta antes de guardar.');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function updateIngredient(index: number, field: keyof Ingredient, value: string | number | null) {
     setIngredients((prev) => {
@@ -114,8 +128,8 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
       servings,
       source: source || null,
       notes: notes || null,
-      image_url: imageUrl || null,
-      tags,
+      image_url: null,
+      tags: fitFat ? [fitFat] : [],
       calories_per_serving: caloriesPerServing ? parseFloat(caloriesPerServing) : null,
       protein_per_serving: proteinPerServing ? parseFloat(proteinPerServing) : null,
       fat_per_serving: fatPerServing ? parseFloat(fatPerServing) : null,
@@ -178,6 +192,29 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
         {errors.category && <p className="mt-1 text-xs text-red-600">{errors.category}</p>}
       </div>
 
+      {/* Fit / Fat */}
+      <div>
+        <label className="mb-1 block text-sm font-semibold text-[#2C2416]">Perfil</label>
+        <div className="flex gap-2">
+          {(['fit', 'fat'] as const).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setFitFat((prev) => (prev === opt ? null : opt))}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                fitFat === opt
+                  ? opt === 'fit'
+                    ? 'bg-[#5C7A3E] text-white'
+                    : 'bg-[#8B4513] text-white'
+                  : 'border border-[#E8E0D0] bg-[#F5F0EB] text-[#4A3F35] hover:bg-[#E8E0D0]'
+              }`}
+            >
+              {opt === 'fit' ? '💪 Fit' : '🍔 Fat'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Servings */}
       <div>
         <label className="mb-1 block text-sm font-semibold text-[#2C2416]">Porciones</label>
@@ -208,52 +245,56 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
         </div>
         <div className="space-y-2">
           {ingredients.map((ing, i) => (
-            <div key={i} className="flex gap-1.5">
+            <div key={i} className="rounded-xl border border-[#E8E0D0] bg-[#F5F0EB] p-2 space-y-1.5">
+              {/* Row 1: qty + unit + name + delete */}
+              <div className="flex items-center gap-1.5">
+                <input
+                  placeholder="Cant."
+                  type="number"
+                  step="any"
+                  className="w-16 rounded-lg border border-[#E8E0D0] bg-[#F5F0EB] px-2 py-1.5 text-sm text-[#2C2416] outline-none placeholder:text-[#9C8B7A] focus:ring-2 focus:ring-[#5C7A3E]/40"
+                  value={ing.qty ?? ''}
+                  onChange={(e) =>
+                    updateIngredient(i, 'qty', e.target.value ? parseFloat(e.target.value) : null)
+                  }
+                />
+                <Select
+                  value={ing.unit ?? 'none'}
+                  onValueChange={(v) => updateIngredient(i, 'unit', !v || v === 'none' ? null : v)}
+                >
+                  <SelectTrigger className="w-20 rounded-lg border-[#E8E0D0] !bg-[#F5F0EB] text-sm text-[#2C2416]">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {ALLOWED_UNITS.map((u) => (
+                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input
+                  placeholder="Ingrediente"
+                  className="flex-1 rounded-lg border border-[#E8E0D0] bg-[#F5F0EB] px-2 py-1.5 text-sm text-[#2C2416] outline-none placeholder:text-[#9C8B7A] focus:ring-2 focus:ring-[#5C7A3E]/40"
+                  value={ing.name}
+                  onChange={(e) => updateIngredient(i, 'name', e.target.value)}
+                />
+                {ingredients.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeIngredient(i)}
+                    className="px-1 text-sm text-[#9C8B7A] hover:text-red-500"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              {/* Row 2: note (optional) */}
               <input
-                placeholder="Cant."
-                type="number"
-                step="any"
-                className={`${inputCls} w-16`}
-                value={ing.qty ?? ''}
-                onChange={(e) =>
-                  updateIngredient(i, 'qty', e.target.value ? parseFloat(e.target.value) : null)
-                }
-              />
-              <Select
-                value={ing.unit ?? 'none'}
-                onValueChange={(v) => updateIngredient(i, 'unit', !v || v === 'none' ? null : v)}
-              >
-                <SelectTrigger className="w-20 rounded-xl border-[#E8E0D0] !bg-[#F5F0EB] text-sm text-[#2C2416]">
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">—</SelectItem>
-                  {ALLOWED_UNITS.map((u) => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <input
-                placeholder="Nombre"
-                className={`${inputCls} flex-1`}
-                value={ing.name}
-                onChange={(e) => updateIngredient(i, 'name', e.target.value)}
-              />
-              <input
-                placeholder="Nota"
-                className={`${inputCls} w-24`}
+                placeholder="Nota opcional..."
+                className="w-full rounded-lg border border-[#E8E0D0] bg-[#F5F0EB] px-2 py-1 text-xs text-[#4A3F35] outline-none placeholder:text-[#C0B4A8] focus:ring-1 focus:ring-[#5C7A3E]/30"
                 value={ing.note ?? ''}
                 onChange={(e) => updateIngredient(i, 'note', e.target.value)}
               />
-              {ingredients.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeIngredient(i)}
-                  className="px-1 text-sm text-[#9C8B7A] hover:text-red-500"
-                >
-                  ×
-                </button>
-              )}
             </div>
           ))}
         </div>
@@ -329,46 +370,6 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
 
       <Separator className="border-[#E8E0D0]" />
 
-      {/* Tags */}
-      <div>
-        <label className="mb-1 block text-sm font-semibold text-[#2C2416]">Etiquetas</label>
-        <div className="flex gap-2">
-          <input
-            placeholder="Agregar etiqueta"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addTag();
-              }
-            }}
-            className={`${inputCls} flex-1`}
-          />
-          <button
-            type="button"
-            onClick={addTag}
-            className="rounded-full border border-[#E8E0D0] bg-[#F5F0EB] px-4 py-2 text-sm font-semibold text-[#5C7A3E] transition-colors hover:bg-[#E8E0D0]"
-          >
-            Agregar
-          </button>
-        </div>
-        {tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {tags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => removeTag(tag)}
-                className="rounded-full bg-[#F0EAD6] px-2.5 py-0.5 text-xs font-medium text-[#5C7A3E] hover:bg-red-100 hover:text-red-600"
-              >
-                {tag} ×
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Source */}
       <div>
         <label className="mb-1 block text-sm font-semibold text-[#2C2416]">Fuente</label>
@@ -376,17 +377,6 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
           value={source}
           onChange={(e) => setSource(e.target.value)}
           placeholder="¿De dónde viene esta receta?"
-          className={inputCls}
-        />
-      </div>
-
-      {/* Image URL */}
-      <div>
-        <label className="mb-1 block text-sm font-semibold text-[#2C2416]">URL de imagen</label>
-        <input
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://..."
           className={inputCls}
         />
       </div>

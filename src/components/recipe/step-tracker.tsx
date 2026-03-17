@@ -54,11 +54,11 @@ export function StepTracker({ slug, steps }: StepTrackerProps) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Pasos</h2>
+        <h2 className="text-lg font-semibold text-[#2C2416]">Pasos</h2>
         {completed.length > 0 && (
           <button
             onClick={clearProgress}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-[#9C8B7A] hover:text-[#2C2416]"
           >
             Borrar progreso
           </button>
@@ -66,7 +66,7 @@ export function StepTracker({ slug, steps }: StepTrackerProps) {
       </div>
 
       {allDone && (
-        <p className="mb-3 text-sm font-medium text-green-600">
+        <p className="mb-3 text-sm font-medium text-[#5C7A3E]">
           ¡Todos los pasos completados!
         </p>
       )}
@@ -78,21 +78,21 @@ export function StepTracker({ slug, steps }: StepTrackerProps) {
             <li key={step.order} className="flex gap-3">
               <button
                 onClick={() => toggleStep(step.order)}
-                className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-xs ${
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium transition-colors ${
                   isDone
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-input'
+                    ? 'border-[#5C7A3E] bg-[#5C7A3E] text-white'
+                    : 'border-[#E8E0D0] bg-[#F5F0EB] text-[#9C8B7A] hover:border-[#5C7A3E]/40'
                 }`}
               >
                 {isDone ? '✓' : step.order}
               </button>
-              <div className={isDone ? 'opacity-60' : ''}>
-                <p className="font-medium">{step.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+              <div className={isDone ? 'opacity-50' : ''}>
+                <p className="font-medium text-[#2C2416]">{step.title}</p>
+                <p className="mt-0.5 text-sm text-[#4A3F35]">
                   {step.content}
                 </p>
                 {step.timer && (
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-[#9C8B7A]">
                     Temporizador: {step.timer >= 60 ? `${Math.floor(step.timer / 60)}m` : ''}{step.timer % 60 > 0 ? `${step.timer % 60}s` : ''}
                   </p>
                 )}
