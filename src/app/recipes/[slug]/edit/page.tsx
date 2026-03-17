@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { RecipeForm } from '@/components/recipe/recipe-form';
 import type { Recipe } from '@/types/recipe';
@@ -22,7 +24,14 @@ export default async function EditRecipePage({ params }: PageProps) {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">Editar: {recipe.name}</h1>
+      <Link
+        href={`/recipes/${recipe.slug}`}
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-[#9C8B7A] hover:text-[#2C2416]"
+      >
+        <ArrowLeft size={16} />
+        Volver
+      </Link>
+      <h1 className="mb-6 text-2xl font-bold text-[#2C2416]">Editar: {recipe.name}</h1>
       <RecipeForm recipe={recipe} />
     </div>
   );

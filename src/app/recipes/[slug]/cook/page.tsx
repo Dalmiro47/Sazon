@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { CookingSessionPanel } from '@/components/recipe/cooking-session';
 import type { Recipe } from '@/types/recipe';
@@ -22,6 +24,16 @@ export default async function CookPage({ params }: PageProps) {
 
   return (
     <div>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-[#2C2416]">{recipe.name}</h1>
+        <Link
+          href={`/recipes/${recipe.slug}`}
+          className="rounded-full p-1.5 text-[#9C8B7A] opacity-70 transition-opacity hover:opacity-100"
+        >
+          <X size={24} />
+          <span className="sr-only">Cerrar</span>
+        </Link>
+      </div>
       <CookingSessionPanel recipe={recipe} />
     </div>
   );

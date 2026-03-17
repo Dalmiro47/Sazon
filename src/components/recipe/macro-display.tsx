@@ -27,20 +27,16 @@ export function MacroDisplay({
   ];
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2">
       {items.map(
         (item) =>
           item.value !== null && (
-            <div
+            <span
               key={item.label}
-              className="rounded-md border px-3 py-1.5 text-sm"
+              className="rounded-full bg-[#F0EAD6] px-3 py-0.5 text-xs font-medium text-[#5C7A3E]"
             >
-              <span className="text-muted-foreground">{item.label}: </span>
-              <span className="font-medium">
-                {item.value}
-                {item.unit}
-              </span>
-            </div>
+              {item.label}: {item.value}{item.unit}
+            </span>
           )
       )}
     </div>

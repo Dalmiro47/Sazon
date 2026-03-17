@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export async function loginAction(pin: string): Promise<{ ok: boolean }> {
   const expectedPin = process.env.AUTH_PIN;
@@ -15,4 +16,9 @@ export async function loginAction(pin: string): Promise<{ ok: boolean }> {
     path: '/',
   });
   return { ok: true };
+}
+
+export async function logoutAction(): Promise<void> {
+  cookies().delete('sazon_auth');
+  redirect('/auth');
 }

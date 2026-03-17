@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Trash2, Search, Plus, Sparkles } from 'lucide-react';
+import { Trash2, Search, Plus, Sparkles, FileDown } from 'lucide-react';
 import { CATEGORY_LABELS, ALLOWED_CATEGORIES } from '@/types/constants';
 import { deleteRecipeAction } from '@/app/actions/recipe';
 import type { Recipe } from '@/types/recipe';
@@ -18,6 +18,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { RecipeForm } from '@/components/recipe/recipe-form';
 import { SuggestRecipe } from '@/components/recipe/suggest-recipe';
+import { ImportRecipe } from '@/components/recipe/import-recipe';
 
 interface RecipeGridProps {
   recipes: Recipe[];
@@ -26,18 +27,21 @@ interface RecipeGridProps {
 export function RecipeGrid({ recipes }: RecipeGridProps) {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
+  const [fitFatFilter, setFitFatFilter] = useState<'fit' | 'fat' | null>(null);
   const [pending, startTransition] = useTransition();
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showSuggestDialog, setShowSuggestDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const router = useRouter();
 
   const filtered = recipes.filter((r) => {
     const matchesCategory = categoryFilter === 'all' || r.category === categoryFilter;
     if (!matchesCategory) return false;
+    if (fitFatFilter && !r.tags.includes(fitFatFilter)) return false;
     if (!query.trim()) return true;
     const q = query.toLowerCase();
-    return r.name.toLowerCase().includes(q) || r.tags.some((t) => t.toLowerCase().includes(q));
+    return r.name.toLowerCase().includes(q);
   });
 
   function handleDelete(recipe: Recipe) {
@@ -51,21 +55,28 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
 
   return (
     <>
-      {/* Sugerir + Agregar — same row, same size */}
+      {/* Sugerir + Importar + Agregar — same row, same size */}
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setShowSuggestDialog(true)}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#5C7A3E]/40 bg-[#F5F0EB] py-2.5 text-sm font-semibold text-[#2C2416] transition-colors hover:bg-[#E8E0D0]"
         >
           <Sparkles size={16} className="text-[#5C7A3E]" />
-          Sugerir receta
+          Sugerir
+        </button>
+        <button
+          onClick={() => setShowImportDialog(true)}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#5C7A3E]/40 bg-[#F5F0EB] py-2.5 text-sm font-semibold text-[#2C2416] transition-colors hover:bg-[#E8E0D0]"
+        >
+          <FileDown size={16} className="text-[#5C7A3E]" />
+          Importar
         </button>
         <button
           onClick={() => setShowAddDialog(true)}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#5C7A3E] py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#4a6433]"
         >
           <Plus size={16} />
-          Agregar receta
+          Agregar
         </button>
       </div>
 
@@ -85,7 +96,7 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
       </div>
 
       {/* Category filter */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         <button
           onClick={() => setCategoryFilter('all')}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
@@ -111,9 +122,33 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
         ))}
       </div>
 
+      {/* Fit / Fat filter */}
+      <div className="mb-6 flex gap-2">
+        <button
+          onClick={() => setFitFatFilter(fitFatFilter === 'fit' ? null : 'fit')}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            fitFatFilter === 'fit'
+              ? 'bg-[#5C7A3E] text-white'
+              : 'bg-[#F0EAD6] text-[#5C7A3E] hover:bg-[#5C7A3E]/20'
+          }`}
+        >
+          💪 Fit
+        </button>
+        <button
+          onClick={() => setFitFatFilter(fitFatFilter === 'fat' ? null : 'fat')}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            fitFatFilter === 'fat'
+              ? 'bg-[#8B4513] text-white'
+              : 'bg-[#F0EAD6] text-[#8B4513] hover:bg-[#8B4513]/20'
+          }`}
+        >
+          🍔 Fat
+        </button>
+      </div>
+
       {filtered.length === 0 ? (
         <p className="text-[#9C8B7A]">
-          {query || categoryFilter !== 'all'
+          {query || categoryFilter !== 'all' || fitFatFilter
             ? 'Sin resultados.'
             : 'Aún no hay recetas. ¡Agrega la primera!'}
         </p>
@@ -132,27 +167,27 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
                     <h2 className="text-base font-semibold leading-snug text-[#2C2416]">
                       {recipe.name}
                     </h2>
-                    <span
-                      data-testid="category-badge"
-                      className="shrink-0 whitespace-nowrap rounded-full bg-[#5C7A3E] px-2.5 py-0.5 text-xs font-medium text-white"
-                    >
-                      {CATEGORY_LABELS[recipe.category as Category] ?? recipe.category}
-                    </span>
+                    <div className="flex shrink-0 gap-1">
+                      <span
+                        data-testid="category-badge"
+                        className="whitespace-nowrap rounded-full bg-[#5C7A3E] px-2.5 py-0.5 text-xs font-medium text-white"
+                      >
+                        {CATEGORY_LABELS[recipe.category as Category] ?? recipe.category}
+                      </span>
+                      {recipe.tags.includes('fit') && (
+                        <span className="whitespace-nowrap rounded-full bg-[#F0EAD6] px-2 py-0.5 text-xs font-medium text-[#5C7A3E]">
+                          💪
+                        </span>
+                      )}
+                      {recipe.tags.includes('fat') && (
+                        <span className="whitespace-nowrap rounded-full bg-[#F0EAD6] px-2 py-0.5 text-xs font-medium text-[#8B4513]">
+                          🍔
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="px-5 pb-5">
-                  {recipe.tags.length > 0 && (
-                    <div className="mb-2 flex flex-wrap gap-1">
-                      {recipe.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-[#F0EAD6] px-2.5 py-0.5 text-xs font-medium text-[#5C7A3E]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-[#9C8B7A]">
                       {recipe.ingredients.length} ingredientes · {recipe.steps.length} pasos ·{' '}
@@ -189,32 +224,23 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
                     {CATEGORY_LABELS[selectedRecipe.category as Category] ?? selectedRecipe.category}
                   </span>
                 </div>
-                {selectedRecipe.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {selectedRecipe.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-[#F0EAD6] px-2.5 py-0.5 text-xs font-medium text-[#5C7A3E]"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                {(selectedRecipe.tags.includes('fit') || selectedRecipe.tags.includes('fat')) && (
+                  <div className="mt-2">
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        selectedRecipe.tags.includes('fit')
+                          ? 'bg-[#F0EAD6] text-[#5C7A3E]'
+                          : 'bg-[#F0EAD6] text-[#8B4513]'
+                      }`}
+                    >
+                      {selectedRecipe.tags.includes('fit') ? '💪 Fit' : '🍔 Fat'}
+                    </span>
                   </div>
                 )}
               </MobileDialogHeader>
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <div className="space-y-4 px-5 pb-4">
-                  {selectedRecipe.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={selectedRecipe.image_url}
-                      alt={selectedRecipe.name}
-                      className="w-full rounded-xl object-cover"
-                      style={{ maxHeight: 200 }}
-                    />
-                  )}
-
                   <div className="flex gap-3 text-sm text-[#9C8B7A]">
                     <span>{selectedRecipe.servings} porciones</span>
                     {selectedRecipe.source && <span>· {selectedRecipe.source}</span>}
@@ -334,6 +360,28 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <div className="px-5 pb-6">
               <SuggestRecipe />
+            </div>
+          </div>
+        </MobileDialogContent>
+      </MobileDialog>
+
+      {/* ── Import Recipe Dialog ── */}
+      <MobileDialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <MobileDialogContent position="center">
+          <MobileDialogHeader>
+            <MobileDialogTitle>Importar receta</MobileDialogTitle>
+            <p className="mt-1 text-sm text-[#9C8B7A]">
+              Sube una foto, pega un enlace o copia el texto de una receta.
+            </p>
+          </MobileDialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="px-5 pb-6">
+              <ImportRecipe
+                onImported={() => {
+                  setShowImportDialog(false);
+                  setShowAddDialog(true);
+                }}
+              />
             </div>
           </div>
         </MobileDialogContent>
