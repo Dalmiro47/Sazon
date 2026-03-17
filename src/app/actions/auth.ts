@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function loginAction(pin: string): Promise<{ ok: boolean }> {
-  const expectedPin = process.env.AUTH_PIN;
+  const expectedPin = process.env.AUTH_PIN?.trim();
   if (!expectedPin || pin !== expectedPin) {
     return { ok: false };
   }

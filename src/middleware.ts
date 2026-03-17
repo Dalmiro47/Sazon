@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const expectedPin = process.env.AUTH_PIN;
+  const expectedPin = process.env.AUTH_PIN?.trim();
 
   // If no PIN is configured, allow everything (dev / non-protected deployments)
   if (!expectedPin) {
