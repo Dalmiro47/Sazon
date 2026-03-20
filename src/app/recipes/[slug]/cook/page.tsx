@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { X } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { CookingSessionPanel } from '@/components/recipe/cooking-session';
 import type { Recipe } from '@/types/recipe';
 
@@ -10,7 +10,7 @@ interface PageProps {
 }
 
 export default async function CookPage({ params }: PageProps) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from('recipes')
     .select('*')

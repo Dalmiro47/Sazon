@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { RecipeForm } from '@/components/recipe/recipe-form';
 import type { Recipe } from '@/types/recipe';
 
@@ -10,7 +10,7 @@ interface PageProps {
 }
 
 export default async function EditRecipePage({ params }: PageProps) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from('recipes')
     .select('*')

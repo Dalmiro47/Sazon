@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { RecipeGrid } from '@/components/recipe/recipe-grid';
 import type { Recipe } from '@/types/recipe';
 
 export default async function HomePage() {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: recipes } = await supabase
     .from('recipes')
     .select('*')
