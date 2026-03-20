@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { slugify } from '@/lib/slugify';
 import { validateRecipePayload } from '@/lib/validate-recipe';
 import type { ActionResult, DeleteResult } from '@/types/actions';
@@ -50,7 +50,7 @@ export async function upsertRecipeAction(
 ): Promise<ActionResult> {
   // TODO: requireAuth()
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   // --- Determine mode ---
   const isUpdate = !!payload.id;
@@ -182,7 +182,7 @@ export async function upsertRecipeAction(
 }
 
 export async function deleteRecipeAction(id: string): Promise<DeleteResult> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: existing } = await supabase
     .from('recipes')

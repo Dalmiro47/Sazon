@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createGroqClient, GROQ_MODEL } from '@/lib/groq';
 import type { Recipe, RecipePayload, SessionMessage, SessionChatResult, SessionEndResult } from '@/types/recipe';
 import type { ActionError } from '@/types/actions';
@@ -42,7 +42,7 @@ export async function startSessionAction(
 ): Promise<StartSessionResult | ActionError> {
   // TODO: requireAuth()
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   // Verify recipe exists
   const { data: recipe } = await supabase
@@ -79,7 +79,7 @@ export async function chatInSessionAction(
     return { ok: false, code: 'VALIDATION_ERROR', message: 'El mensaje no puede estar vacío' };
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   // Fetch session
   const { data: session } = await supabase
@@ -199,7 +199,7 @@ export async function endSessionAction(
 ): Promise<SessionEndResult | ActionError> {
   // TODO: requireAuth()
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   // Fetch session
   const { data: session } = await supabase
@@ -319,7 +319,7 @@ ${conversationText}`;
 export async function getSessionAction(
   sessionId: string
 ): Promise<{ messages: SessionMessage[] } | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from('cooking_sessions')
     .select('messages')

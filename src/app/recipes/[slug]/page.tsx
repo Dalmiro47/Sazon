@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Separator } from '@/components/ui/separator';
 import { ServingsScaler } from '@/components/recipe/servings-scaler';
 import { StepTracker } from '@/components/recipe/step-tracker';
@@ -16,7 +16,7 @@ interface PageProps {
 }
 
 export default async function RecipeDetailPage({ params }: PageProps) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from('recipes')
     .select('*')
