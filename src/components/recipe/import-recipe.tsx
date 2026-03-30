@@ -28,7 +28,6 @@ interface ImportRecipeProps {
 export function ImportRecipe({ onImported }: ImportRecipeProps) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -197,24 +196,16 @@ export function ImportRecipe({ onImported }: ImportRecipeProps) {
 
       {/* Photo tab */}
       <TabsContent value="photo" className="space-y-3">
-        {/* Mobile UI — two large buttons */}
+        {/* Mobile UI — single button (system picker includes camera + gallery) */}
         {!imagePreview && (
           <div className="flex flex-col gap-3 md:hidden">
-            <button
-              type="button"
-              onClick={() => cameraRef.current?.click()}
-              className={largeBtnCls}
-            >
-              <Camera size={20} />
-              Tomar foto
-            </button>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
               className={largeBtnCls}
             >
               <ImageIcon size={20} />
-              Elegir de galería
+              Seleccionar foto
             </button>
           </div>
         )}
@@ -262,19 +253,11 @@ export function ImportRecipe({ onImported }: ImportRecipeProps) {
           </button>
         )}
 
-        {/* File inputs — hidden */}
+        {/* File input — hidden */}
         <input
           ref={fileRef}
           type="file"
           accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        <input
-          ref={cameraRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
           onChange={handleFileChange}
           className="hidden"
         />
@@ -287,7 +270,6 @@ export function ImportRecipe({ onImported }: ImportRecipeProps) {
               setImagePreview(null);
               setImageBase64(null);
               if (fileRef.current) fileRef.current.value = '';
-              if (cameraRef.current) cameraRef.current.value = '';
             }}
             className="text-sm text-[#9C8B7A] underline"
           >
