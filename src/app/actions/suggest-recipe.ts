@@ -68,6 +68,21 @@ Reglas:
   • "fat" si cumple CUALQUIERA: >450 kcal/porción, >20g grasa/porción, contiene chocolate/nutella/crema/mantequilla en cantidad significativa, frituras, pasteles, postres con azúcar, quesos grasos, embutidos.
   • "fit" solo si: ≤450 kcal/porción Y ≤20g grasa/porción Y es principalmente proteína magra, verduras, legumbres o granos integrales sin frituras.
   • En caso de duda, elige "fat". Nunca pongas ambos.
+- Macros POR PORCION: calcula paso a paso, no estimes el plato completo de golpe.
+  a) Para cada ingrediente con qty, estima sus macros usando valores USDA de referencia:
+     Pechuga pollo cruda 100g = 165 kcal | 31g prot | 3.6g grasa | 0g carbs
+     Carne molida 80% magra 100g = 215 kcal | 26g prot | 12g grasa | 0g carbs
+     Arroz cocido 100g = 130 kcal | 2.5g prot | 0.3g grasa | 28g carbs
+     Papa cocida 100g = 87 kcal | 2g prot | 0.1g grasa | 20g carbs
+     Aceite (cualquier tipo) 1 cda (14g) = 120 kcal | 0g prot | 14g grasa | 0g carbs
+     Huevo entero 1 pieza (50g) = 72 kcal | 6g prot | 5g grasa | 0.4g carbs
+     Harina de trigo 100g = 364 kcal | 10g prot | 1g grasa | 76g carbs
+     Leche entera 100ml = 61 kcal | 3.2g prot | 3.3g grasa | 4.8g carbs
+     Mantequilla 100g = 717 kcal | 0.9g prot | 81g grasa | 0.1g carbs
+     Queso fresco 100g = 264 kcal | 18g prot | 21g grasa | 1g carbs
+  b) Suma los macros de todos los ingredientes (total receta)
+  c) DIVIDE entre servings para obtener el valor POR PORCION
+  d) Prefiere quedar corto a sobreestimar si no tienes datos exactos.
 - Devuelve SOLO JSON válido, sin bloques markdown ni texto extra
 - Todo el texto debe estar en español`;
 
