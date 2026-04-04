@@ -16,11 +16,17 @@ type Phase = 'idle' | 'chatting' | 'ending' | 'review';
 
 const SESSION_STORAGE_KEY = (recipeId: string) => `cooking-session-${recipeId}`;
 
-interface Props {
-  recipe: Recipe;
+function formatQty(qty: number): string {
+  const n = Math.round(qty * 100) / 100;
+  return n % 1 === 0 ? String(n) : n.toFixed(2).replace(/\.?0+$/, '');
 }
 
-export function CookingSessionPanel({ recipe }: Props) {
+interface Props {
+  recipe: Recipe;
+  cookServings?: number;
+}
+
+export function CookingSessionPanel({ recipe, cookServings }: Props) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<SessionMessage[]>([]);
@@ -32,47 +38,52 @@ export function CookingSessionPanel({ recipe }: Props) {
   const [recipeExpanded, setRecipeExpanded] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Resume session from localStorage on mount
+  const servings = cookServings ?? recipe.servings;
+  const scale = servings / recipe.servings;
+
+  // Resume existing session or auto-start a new one
   useEffect(() => {
     const stored = localStorage.getItem(SESSION_STORAGE_KEY(recipe.id));
-    if (!stored) return;
 
-    let resuming = true;
-    getSessionAction(stored).then((data) => {
-      if (!resuming) return;
-      if (data && data.messages.length > 0) {
-        setSessionId(stored);
-        setMessages(data.messages);
+    if (stored) {
+      let resuming = true;
+      getSessionAction(stored).then((data) => {
+        if (!resuming) return;
+        if (data && data.messages.length > 0) {
+          setSessionId(stored);
+          setMessages(data.messages);
+          setPhase('chatting');
+        } else {
+          localStorage.removeItem(SESSION_STORAGE_KEY(recipe.id));
+          autoStart();
+        }
+      });
+      return () => { resuming = false; };
+    }
+
+    autoStart();
+
+    function autoStart() {
+      setLoading(true);
+      setError(null);
+      startSessionAction(recipe.id).then((result) => {
+        setLoading(false);
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+        localStorage.setItem(SESSION_STORAGE_KEY(recipe.id), result.sessionId);
+        setSessionId(result.sessionId);
+        setMessages([]);
         setPhase('chatting');
-      } else {
-        localStorage.removeItem(SESSION_STORAGE_KEY(recipe.id));
-      }
-    });
-
-    return () => { resuming = false; };
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  async function handleStart() {
-    setLoading(true);
-    setError(null);
-    const result = await startSessionAction(recipe.id);
-    setLoading(false);
-
-    if (!result.ok) {
-      setError(result.message);
-      return;
-    }
-
-    localStorage.setItem(SESSION_STORAGE_KEY(recipe.id), result.sessionId);
-    setSessionId(result.sessionId);
-    setMessages([]);
-    setPhase('chatting');
-  }
-
 
   const handleSend = useCallback(async () => {
     if (!sessionId || !input.trim() || loading) return;
@@ -153,28 +164,15 @@ export function CookingSessionPanel({ recipe }: Props) {
     }
   }
 
-  // --- IDLE PHASE ---
+  // --- IDLE PHASE (auto-starting) ---
   if (phase === 'idle') {
     return (
-      <div className="space-y-5">
-        <div>
-          <p className="text-sm text-[#9C8B7A]">¿Listo para cocinar?</p>
-        </div>
-
-        <div className="rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-5">
-          <p className="mb-4 text-sm text-[#9C8B7A]">
-            🎉 Chatea con tu asistente de cocina mientras preparas esta receta.
-            Haz preguntas, reporta lo que sale bien, y al final recibirás un
-            resumen con una receta mejorada basada en tu experiencia.
-          </p>
-          <button
-            onClick={handleStart}
-            disabled={loading}
-            className="w-full rounded-full bg-[#5C7A3E] py-3 text-sm font-bold text-white transition-colors hover:bg-[#4a6433] disabled:opacity-60"
-          >
-            {loading ? 'Iniciando...' : '🍳 Empezar sesión de cocina'}
-          </button>
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <p className="text-sm text-[#9C8B7A]">{loading ? 'Iniciando sesión...' : 'Cargando...'}</p>
+          {error && (
+            <p className="mt-2 text-sm text-red-600">{error}</p>
+          )}
         </div>
       </div>
     );
@@ -262,11 +260,18 @@ export function CookingSessionPanel({ recipe }: Props) {
       {/* Collapsible recipe panel */}
       {recipeExpanded && (
         <div className="mb-3 max-h-48 overflow-y-auto rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] p-4 text-sm">
-          <p className="mb-1 font-semibold text-[#2C2416]">Ingredientes</p>
+          <p className="mb-1 font-semibold text-[#2C2416]">
+            Ingredientes
+            {scale !== 1 && (
+              <span className="ml-2 text-xs font-normal text-[#9C8B7A]">
+                ({servings} {servings === 1 ? 'porción' : 'porciones'})
+              </span>
+            )}
+          </p>
           <ul className="mb-3 space-y-0.5 text-xs text-[#4A3F35]">
             {recipe.ingredients.map((ing, i) => (
               <li key={i}>
-                {ing.qty !== null && <span className="font-medium">{ing.qty} </span>}
+                {ing.qty !== null && <span className="font-medium">{formatQty(ing.qty * scale)} </span>}
                 {ing.unit && <span>{ing.unit} </span>}
                 {ing.name}
                 {ing.note && <span className="text-[#9C8B7A]"> — {ing.note}</span>}

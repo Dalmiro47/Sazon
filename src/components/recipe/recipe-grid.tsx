@@ -24,12 +24,18 @@ interface RecipeGridProps {
   recipes: Recipe[];
 }
 
+function formatQty(qty: number): string {
+  const n = Math.round(qty * 100) / 100;
+  return n % 1 === 0 ? String(n) : n.toFixed(2).replace(/\.?0+$/, '');
+}
+
 export function RecipeGrid({ recipes }: RecipeGridProps) {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
   const [fitFatFilter, setFitFatFilter] = useState<'fit' | 'fat' | null>(null);
   const [pending, startTransition] = useTransition();
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [dialogServings, setDialogServings] = useState(1);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showSuggestDialog, setShowSuggestDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -159,7 +165,7 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
               key={recipe.id}
               className="group relative cursor-pointer"
               data-testid="recipe-card"
-              onClick={() => setSelectedRecipe(recipe)}
+              onClick={() => { setSelectedRecipe(recipe); setDialogServings(recipe.servings); }}
             >
               <div className="rounded-2xl border border-[#E8E0D0] bg-[#FAF6EF] transition-transform hover:-translate-y-1">
                 <div className="p-5 pb-3">
@@ -241,9 +247,27 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
 
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 <div className="space-y-4 px-5 pb-4">
-                  <div className="flex gap-3 text-sm text-[#9C8B7A]">
-                    <span>{selectedRecipe.servings} porciones</span>
-                    {selectedRecipe.source && <span>· {selectedRecipe.source}</span>}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setDialogServings((v) => Math.max(1, v - 1))}
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-[#E8E0D0] bg-white text-sm font-bold text-[#5C7A3E] transition-colors hover:bg-[#F5F0EB]"
+                      >
+                        −
+                      </button>
+                      <span className="min-w-[5rem] text-center text-sm text-[#4A3F35]">
+                        {dialogServings} {dialogServings === 1 ? 'porción' : 'porciones'}
+                      </span>
+                      <button
+                        onClick={() => setDialogServings((v) => Math.min(100, v + 1))}
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-[#E8E0D0] bg-white text-sm font-bold text-[#5C7A3E] transition-colors hover:bg-[#F5F0EB]"
+                      >
+                        +
+                      </button>
+                    </div>
+                    {selectedRecipe.source && (
+                      <span className="text-xs text-[#9C8B7A]">{selectedRecipe.source}</span>
+                    )}
                   </div>
 
                   {selectedRecipe.ingredients.length > 0 && (
@@ -252,21 +276,24 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
                       <div>
                         <h3 className="mb-2 font-semibold text-[#2C2416]">Ingredientes</h3>
                         <ul className="space-y-1.5">
-                          {selectedRecipe.ingredients.map((ing, i) => (
-                            <li key={i} className="text-sm text-[#4A3F35]">
-                              {ing.qty !== null && (
-                                <span className="font-medium">{ing.qty}</span>
-                              )}
-                              {ing.unit && <span className="ml-1">{ing.unit}</span>}
-                              <span className="ml-1">{ing.name}</span>
-                              {ing.qty === null && (
-                                <span className="ml-1 text-[#9C8B7A]">(al gusto)</span>
-                              )}
-                              {ing.note && (
-                                <span className="ml-1 text-[#9C8B7A]">— {ing.note}</span>
-                              )}
-                            </li>
-                          ))}
+                          {selectedRecipe.ingredients.map((ing, i) => {
+                            const scale = dialogServings / selectedRecipe.servings;
+                            return (
+                              <li key={i} className="text-sm text-[#4A3F35]">
+                                {ing.qty !== null && (
+                                  <span className="font-medium">{formatQty(ing.qty * scale)}</span>
+                                )}
+                                {ing.unit && <span className="ml-1">{ing.unit}</span>}
+                                <span className="ml-1">{ing.name}</span>
+                                {ing.qty === null && (
+                                  <span className="ml-1 text-[#9C8B7A]">(al gusto)</span>
+                                )}
+                                {ing.note && (
+                                  <span className="ml-1 text-[#9C8B7A]">— {ing.note}</span>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     </>
@@ -321,7 +348,7 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
                     Editar
                   </Link>
                   <Link
-                    href={`/recipes/${selectedRecipe.slug}/cook`}
+                    href={`/recipes/${selectedRecipe.slug}/cook?servings=${dialogServings}`}
                     className="rounded-full bg-[#5C7A3E] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#4a6433]"
                     onClick={() => setSelectedRecipe(null)}
                   >
