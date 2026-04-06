@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Trash2, Search, Plus, Sparkles, FileDown } from 'lucide-react';
 import { CATEGORY_LABELS, ALLOWED_CATEGORIES } from '@/types/constants';
-import { deleteRecipeAction } from '@/app/actions/recipe';
+import { deleteRecipeAction, fetchRecipesAction } from '@/app/actions/recipe';
 import type { Recipe } from '@/types/recipe';
 import type { Category } from '@/types/constants';
 import {
@@ -21,7 +21,8 @@ import { SuggestRecipe } from '@/components/recipe/suggest-recipe';
 import { ImportRecipe } from '@/components/recipe/import-recipe';
 
 interface RecipeGridProps {
-  recipes: Recipe[];
+  initialRecipes: Recipe[];
+  initialHasMore: boolean;
 }
 
 function formatQty(qty: number): string {
@@ -29,7 +30,7 @@ function formatQty(qty: number): string {
   return n % 1 === 0 ? String(n) : n.toFixed(2).replace(/\.?0+$/, '');
 }
 
-export function RecipeGrid({ recipes }: RecipeGridProps) {
+export function RecipeGrid({ initialRecipes, initialHasMore }: RecipeGridProps) {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
   const [fitFatFilter, setFitFatFilter] = useState<'fit' | 'fat' | null>(null);
@@ -41,14 +42,55 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const router = useRouter();
 
-  const filtered = recipes.filter((r) => {
-    const matchesCategory = categoryFilter === 'all' || r.category === categoryFilter;
-    if (!matchesCategory) return false;
-    if (fitFatFilter && !r.tags.includes(fitFatFilter)) return false;
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return r.name.toLowerCase().includes(q);
-  });
+  const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [offset, setOffset] = useState(initialRecipes.length);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const fetchGen = useRef(0);
+  const isInitialMount = useRef(true);
+
+  const fetchFiltered = useCallback(async (q: string, cat: Category | 'all', ff: 'fit' | 'fat' | null) => {
+    const gen = ++fetchGen.current;
+    setIsFiltering(true);
+    const result = await fetchRecipesAction({
+      offset: 0,
+      query: q || undefined,
+      category: cat !== 'all' ? cat : undefined,
+      fitFat: ff ?? undefined,
+    });
+    if (gen !== fetchGen.current) return;
+    setRecipes(result.recipes);
+    setHasMore(result.hasMore);
+    setOffset(result.recipes.length);
+    setIsFiltering(false);
+  }, []);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    const timer = setTimeout(() => fetchFiltered(query, categoryFilter, fitFatFilter), query ? 300 : 0);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, categoryFilter, fitFatFilter]);
+
+  async function loadMore() {
+    setIsLoadingMore(true);
+    const result = await fetchRecipesAction({
+      offset,
+      query: query || undefined,
+      category: categoryFilter !== 'all' ? categoryFilter : undefined,
+      fitFat: fitFatFilter ?? undefined,
+    });
+    setRecipes((prev) => [...prev, ...result.recipes]);
+    setHasMore(result.hasMore);
+    setOffset((prev) => prev + result.recipes.length);
+    setIsLoadingMore(false);
+  }
+
+  const filtered = recipes;
 
   function handleDelete(recipe: Recipe) {
     if (!window.confirm(`¿Eliminar ${recipe.name}?`)) return;
@@ -152,7 +194,9 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
         </button>
       </div>
 
-      {filtered.length === 0 ? (
+      {isFiltering ? (
+        <p className="text-sm text-[#9C8B7A]">Buscando...</p>
+      ) : filtered.length === 0 ? (
         <p className="text-[#9C8B7A]">
           {query || categoryFilter !== 'all' || fitFatFilter
             ? 'Sin resultados.'
@@ -215,6 +259,18 @@ export function RecipeGrid({ recipes }: RecipeGridProps) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!isFiltering && hasMore && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={isLoadingMore}
+            className="rounded-full border border-[#5C7A3E]/40 bg-[#F5F0EB] px-6 py-2.5 text-sm font-semibold text-[#2C2416] transition-colors hover:bg-[#E8E0D0] disabled:opacity-50"
+          >
+            {isLoadingMore ? 'Cargando...' : 'Cargar más'}
+          </button>
         </div>
       )}
 
