@@ -50,6 +50,7 @@ fat_per_serving      numeric (≥ 0, nullable)
 carbs_per_serving    numeric (≥ 0, nullable)
 created_at           timestamptz NOT NULL default now()
 updated_at           timestamptz NOT NULL default now() — DB trigger only
+deleted_at           timestamptz NULL default null — soft delete; null = active
 ```
 
 ## Data Model — cooking_sessions table

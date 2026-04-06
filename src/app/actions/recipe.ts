@@ -7,6 +7,39 @@ import type { ActionResult, DeleteResult } from '@/types/actions';
 import type { Recipe, RecipePayload } from '@/types/recipe';
 import { SupabaseClient } from '@supabase/supabase-js';
 
+const PAGE_SIZE = 16;
+
+export async function fetchRecipesAction(params: {
+  offset?: number;
+  query?: string;
+  category?: string;
+  fitFat?: 'fit' | 'fat';
+} = {}): Promise<{ recipes: Recipe[]; hasMore: boolean }> {
+  const { offset = 0, query, category, fitFat } = params;
+  const supabase = createAdminClient();
+
+  // Fetch PAGE_SIZE + 1 to detect if there are more
+  let builder = supabase
+    .from('recipes')
+    .select('*')
+    .is('deleted_at', null)
+    .order('updated_at', { ascending: false })
+    .range(offset, offset + PAGE_SIZE);
+
+  if (query) builder = builder.ilike('name', `%${query}%`);
+  if (category) builder = builder.eq('category', category);
+  if (fitFat) builder = builder.contains('tags', [fitFat]);
+
+  const { data, error } = await builder;
+  if (error || !data) return { recipes: [], hasMore: false };
+
+  const hasMore = data.length > PAGE_SIZE;
+  return {
+    recipes: (hasMore ? data.slice(0, PAGE_SIZE) : data) as Recipe[],
+    hasMore,
+  };
+}
+
 /**
  * Resolve a unique slug by appending -2, -3, ... if collision detected.
  * Falls back to UNIQUE constraint catch for race conditions.
