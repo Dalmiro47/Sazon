@@ -156,3 +156,8 @@ Keep this file between 200–300 lines max. Every line must earn its keep.
 
 ### Scale Expectation
 - This is a household app (1–5 users). Do not over-engineer for scale. Optimize for simplicity and readability over performance
+
+### Destructive Operations
+- Before ANY destructive or irreversible operation, do NOT execute directly. First confirm a recent Supabase backup/snapshot exists (or create one), then STOP and ask for explicit confirmation, stating: (a) exactly what will be affected, (b) why it's irreversible, (c) what backup/rollback exists
+- Covers (non-exhaustive): dropping/truncating `recipes` or `cooking_sessions` tables; mass/unscoped DELETE or UPDATE; hard-deleting rows instead of using the `deleted_at` soft-delete; schema migrations that drop columns or data; deleting files or directories (`rm -rf`); overwriting production data; force-pushing or rewriting git history on shared branches; destructive Supabase CLI/API calls against the production instance (shared with Open Brain)
+- "I'll just do it quickly" is not a reason to skip this. Speed is exactly the risk
