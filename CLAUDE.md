@@ -5,7 +5,7 @@ Read and follow `CONSTRAINTS.md` at the repo root before every task. It defines:
 - When to stop and ask (Section 2)
 - How to resolve goal vs. constraint conflicts (Section 3)
 - Session hygiene rules (Section 4)
-- Project-specific extensions (Section 5)
+- Where project rules live, the factory git exception and shared app rules (Section 5); this repo's own rules are under `## Project constraints` below
 
 CONSTRAINTS.md rules are non-negotiable. If a task conflicts with a constraint, stop and surface the conflict — do not silently resolve it.
 
@@ -116,13 +116,6 @@ Order is renormalized to [1, 2, 3, ...] server-side before every write.
 - Shared prompt in `src/lib/import-recipe-prompt.ts` — same schema for all 3 modes; always estimates macros and assigns fit/fat tag
 - HTML stripping for URLs via `src/lib/html-to-text.ts` (no npm dep, truncates at 8000 chars)
 
-## Constraints (non-negotiable)
-- Constraints are hard guardrails, not problems to solve
-- Historical bugs mentioned as context = things to avoid, always
-- Minimum viable plan: match the stated UX outcome with the minimum change needed
-- Do not add scope (refactors, extra configurability) unless explicitly asked
-- When proposing UX changes, separate effects/polish (welcome) from structural/layout changes (require explicit approval)
-
 ## Playwright
 - Never run Playwright tests unless explicitly instructed with the phrase "run playwright"
 - Never add Playwright test runs to the default dev workflow or pre-commit hooks
@@ -141,8 +134,9 @@ All user-facing text in the app must be in Spanish — UI labels, buttons, error
 2. Run `/playwright` when implementation is done
 3. Run `/dds:brain-sync` before ending the session
 
-## Agent Guardrails (non-negotiable)
-Keep this file between 200–300 lines max. Every line must earn its keep.
+## Project constraints
+- Constraints are hard guardrails, not problems to solve
+- Historical bugs mentioned as context = things to avoid, always
 
 ### Error Handling
 - Every server call must handle failure with a clear, friendly Spanish message — never a blank screen or unhandled crash
@@ -157,9 +151,16 @@ Keep this file between 200–300 lines max. Every line must earn its keep.
 - This is a household app (1–5 users). Do not over-engineer for scale. Optimize for simplicity and readability over performance
 
 ### Destructive Operations
-- Before ANY destructive or irreversible operation, do NOT execute directly. First confirm a recent Supabase backup/snapshot exists (or create one), then STOP and ask for explicit confirmation, stating: (a) exactly what will be affected, (b) why it's irreversible, (c) what backup/rollback exists
+- Before ANY destructive or irreversible operation, follow CONSTRAINTS.md 4 (snapshot, then ask): do NOT execute directly. First confirm a recent Supabase backup/snapshot exists; if none does, STOP and ask the owner to create it (never run anything against Supabase yourself). Then STOP and ask for explicit confirmation, stating: (a) exactly what will be affected, (b) why it's irreversible, (c) what backup/rollback exists
 - Covers (non-exhaustive): dropping/truncating `recipes` or `cooking_sessions` tables; mass/unscoped DELETE or UPDATE; hard-deleting rows instead of using the `deleted_at` soft-delete; schema migrations that drop columns or data; deleting files or directories (`rm -rf`); overwriting production data; force-pushing or rewriting git history on shared branches; destructive Supabase CLI/API calls against the production instance (shared with Open Brain)
+- `supabase db reset`/`db push`, `secrets set`/`unset`, `functions deploy`/`delete`, `migration repair`, and the remote admin commands `config push`, `storage rm`/`mv`/`cp`, `backups restore`, `projects delete`, `branches delete` and `migration up --linked`/`--db-url` are denied by the dds guard (`.claude/dds-guard.json`), as is any access to `supabase/.temp/`; the owner runs them from their own terminal after the backup and confirmation above
 - "I'll just do it quickly" is not a reason to skip this. Speed is exactly the risk
+
+### Working Rules
+- Keep this file under 300 lines. Every line must earn its keep.
+- Minimum viable plan: match the stated UX outcome with the minimum change needed
+- Do not add scope (refactors, extra configurability) unless explicitly asked
+- When proposing UX changes, separate effects/polish (welcome) from structural/layout changes (require explicit approval)
 
 ## Skills
 
