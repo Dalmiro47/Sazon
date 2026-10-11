@@ -35,5 +35,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Personal workflow scratchpad
-sazon-PR.md
+# playwright output
+/test-results/

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "supabase-db",
+      "decision": "deny",
+      "command": "^supabase( .*)? db (reset|push)( |$)",
+      "reason": "writes the production database shared with Open Brain (CLAUDE.md Destructive Operations, CONSTRAINTS 1.4, 4)"
+    },
+    {
+      "id": "supabase-secrets",
+      "decision": "deny",
+      "command": "^supabase( .*)? secrets (set|unset)( |$)",
+      "reason": "changes live secrets on the project shared with Open Brain (CONSTRAINTS 1.3, 1.4)"
+    },
+    {
+      "id": "supabase-functions",
+      "decision": "deny",
+      "command": "^supabase( .*)? functions (deploy|delete)( |$)",
+      "reason": "changes live functions on the project shared with Open Brain (CONSTRAINTS 1.4)"
+    },
+    {
+      "id": "supabase-migration-repair",
+      "decision": "deny",
+      "command": "^supabase( .*)? migration repair( |$)",
+      "reason": "rewrites the production migration history (CLAUDE.md Destructive Operations, CONSTRAINTS 4)"
+    },
+    {
+      "id": "supabase-remote-admin",
+      "decision": "deny",
+      "command": "^supabase( .*)? (config push|storage (rm|mv|cp)|backups restore|projects delete|branches delete|migration up .*--(linked|db-url))( |=|$)",
+      "reason": "writes or deletes on the production project shared with Open Brain (CLAUDE.md Destructive Operations, CONSTRAINTS 1.4, 4)"
+    },
+    {
+      "id": "supabase-temp",
+      "decision": "deny",
+      "path": "supabase/.temp/**",
+      "reason": "CLI state with project credentials (CONSTRAINTS 1.3)"
+    }
+  ]
+}
