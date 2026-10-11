@@ -1,6 +1,6 @@
 'use server';
 
-import { createGroqClient, GROQ_MODEL } from '@/lib/groq';
+import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import { createClient } from '@/lib/supabase/server';
 import { CATEGORY_LABELS } from '@/types/constants';
 import type { Category } from '@/types/constants';
@@ -58,8 +58,7 @@ Criterio fit/fat:
 Reglas: devuelve SOLO JSON válido, sin texto extra ni markdown. Todo en español.`;
 
   try {
-    const response = await grok.chat.completions.create({
-      model: GROQ_MODEL,
+    const content = await groqChat(grok, {
       messages: [
         { role: 'system', content: systemPrompt },
         {
@@ -75,7 +74,6 @@ Reglas: devuelve SOLO JSON válido, sin texto extra ni markdown. Todo en españo
       temperature: 0.9,
     });
 
-    const content = response.choices[0]?.message?.content;
     if (!content) return { ok: false, message: 'Sin respuesta del modelo' };
 
     const jsonStr = content.replace(/```json?\n?/g, '').replace(/```\n?/g, '').trim();
@@ -85,7 +83,7 @@ Reglas: devuelve SOLO JSON válido, sin texto extra ni markdown. Todo en españo
   } catch (err) {
     return {
       ok: false,
-      message: err instanceof Error ? err.message : 'Error al generar ideas',
+      message: aiErrorMessage(err, 'Error al generar ideas'),
     };
   }
 }

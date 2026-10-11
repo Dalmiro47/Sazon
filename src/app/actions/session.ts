@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createGroqClient, GROQ_MODEL } from '@/lib/groq';
+import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import type { Recipe, RecipePayload, SessionMessage, SessionChatResult, SessionEndResult } from '@/types/recipe';
 import type { ActionError } from '@/types/actions';
 
@@ -157,13 +157,10 @@ Responde en español.`;
   }
 
   try {
-    const response = await grok.chat.completions.create({
-      model: GROQ_MODEL,
+    const reply = await groqChat(grok, {
       messages: apiMessages,
       temperature: 0.7,
     });
-
-    const reply = response.choices[0]?.message?.content;
     if (!reply) {
       return { ok: false, code: 'DB_ERROR', message: 'Sin respuesta del modelo' };
     }
@@ -189,7 +186,7 @@ Responde en español.`;
     return {
       ok: false,
       code: 'DB_ERROR',
-      message: err instanceof Error ? err.message : 'Error al comunicarse con el modelo',
+      message: aiErrorMessage(err, 'Error al comunicarse con el modelo'),
     };
   }
 }
@@ -277,16 +274,13 @@ ${conversationText}`;
   }
 
   try {
-    const response = await grok.chat.completions.create({
-      model: GROQ_MODEL,
+    const content = await groqChat(grok, {
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: 'Genera el resumen y la receta mejorada en JSON.' },
       ],
       temperature: 0.5,
     });
-
-    const content = response.choices[0]?.message?.content;
     if (!content) {
       return { ok: false, code: 'DB_ERROR', message: 'Sin respuesta del modelo' };
     }
@@ -311,7 +305,7 @@ ${conversationText}`;
     return {
       ok: false,
       code: 'DB_ERROR',
-      message: err instanceof Error ? err.message : 'Error al generar el resumen',
+      message: aiErrorMessage(err, 'Error al generar el resumen'),
     };
   }
 }

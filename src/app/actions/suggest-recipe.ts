@@ -1,6 +1,6 @@
 'use server';
 
-import { createGroqClient, GROQ_MODEL } from '@/lib/groq';
+import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import { createClient } from '@/lib/supabase/server';
 import type { RecipePayload } from '@/types/recipe';
 import { ALLOWED_CATEGORIES, ALLOWED_UNITS, CATEGORY_LABELS } from '@/types/constants';
@@ -87,8 +87,7 @@ Reglas:
 - Todo el texto debe estar en español`;
 
   try {
-    const response = await grok.chat.completions.create({
-      model: GROQ_MODEL,
+    const content = await groqChat(grok, {
       messages: [
         { role: 'system', content: systemPrompt },
         {
@@ -104,7 +103,6 @@ Reglas:
       temperature: 0.8,
     });
 
-    const content = response.choices[0]?.message?.content;
     if (!content) {
       return { ok: false, message: 'Sin respuesta del modelo' };
     }
@@ -117,7 +115,7 @@ Reglas:
   } catch (err) {
     return {
       ok: false,
-      message: err instanceof Error ? err.message : 'Error al generar la sugerencia de receta',
+      message: aiErrorMessage(err, 'Error al generar la sugerencia de receta'),
     };
   }
 }

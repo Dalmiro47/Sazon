@@ -24,7 +24,7 @@ npx tsc --noEmit && npm run lint  # Full pre-commit validation
 - Next.js 14 App Router + TypeScript + Tailwind CSS
 - Supabase (shared instance with Open Brain project)
 - Shadcn UI (components in src/components/ui/)
-- Groq API (via OpenAI SDK) — text model: `llama-3.3-70b-versatile`, vision model: `meta-llama/llama-4-scout-17b-16e-instruct`
+- Groq API (via OpenAI SDK, key `GROK_API_KEY`) — `qwen/qwen3.8-27b` for text + vision with `reasoning_effort: 'none'`; text-only fallback `openai/gpt-oss-120b`; all calls go through `groqChat()` in `src/lib/groq.ts`
 
 ## Coding Standards
 - No `any` — use interfaces from `src/types/`
