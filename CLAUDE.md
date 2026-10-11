@@ -135,12 +135,11 @@ All user-facing text in the app must be in Spanish — UI labels, buttons, error
 
 ## Custom Commands
 - `/playwright` — runs Playwright test suite for current feature; creates spec if none exists; auto-corrects until all pass
-- `/brain-sync` — captures current session state to Open Brain MCP as a meeting_debrief thought
 
 ## Session Workflow
 1. Work on feature/fix
 2. Run `/playwright` when implementation is done
-3. Run `/brain-sync` before ending the session
+3. Run `/dds:brain-sync` before ending the session
 
 ## Agent Guardrails (non-negotiable)
 Keep this file between 200–300 lines max. Every line must earn its keep.
@@ -161,3 +160,11 @@ Keep this file between 200–300 lines max. Every line must earn its keep.
 - Before ANY destructive or irreversible operation, do NOT execute directly. First confirm a recent Supabase backup/snapshot exists (or create one), then STOP and ask for explicit confirmation, stating: (a) exactly what will be affected, (b) why it's irreversible, (c) what backup/rollback exists
 - Covers (non-exhaustive): dropping/truncating `recipes` or `cooking_sessions` tables; mass/unscoped DELETE or UPDATE; hard-deleting rows instead of using the `deleted_at` soft-delete; schema migrations that drop columns or data; deleting files or directories (`rm -rf`); overwriting production data; force-pushing or rewriting git history on shared branches; destructive Supabase CLI/API calls against the production instance (shared with Open Brain)
 - "I'll just do it quickly" is not a reason to skip this. Speed is exactly the risk
+
+## Skills
+
+`/dds:brain-sync` (shared skill from the dds-kit plugin) captures a session-state milestone to Open Brain via the `capture_thought` MCP tool.
+
+## Brain sync
+
+- Topics: sazon, Next.js, Supabase
