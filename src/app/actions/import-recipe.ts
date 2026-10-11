@@ -1,7 +1,7 @@
 'use server';
 
 import { YoutubeTranscript } from 'youtube-transcript';
-import { createGroqClient, GROQ_MODEL, GROQ_VISION_MODEL } from '@/lib/groq';
+import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import { buildImportSystemPrompt } from '@/lib/import-recipe-prompt';
 import { htmlToText } from '@/lib/html-to-text';
 import { sanitizeImportedRecipe } from '@/lib/sanitize-import';
@@ -45,7 +45,7 @@ function parseRecipeJson(content: string): RecipePayload {
   if (!jsonStr.startsWith('{')) {
     const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('No JSON found in response');
+      throw new Error('La IA no devolvió una receta. Probá de nuevo.');
     }
     jsonStr = jsonMatch[0];
   }
@@ -93,8 +93,7 @@ export async function importFromImageAction(base64Image: string): Promise<Import
   }
 
   try {
-    const response = await groq.chat.completions.create({
-      model: GROQ_VISION_MODEL,
+    const content = await groqChat(groq, {
       messages: [
         { role: 'system', content: buildImportSystemPrompt('photo') },
         {
@@ -109,9 +108,8 @@ export async function importFromImageAction(base64Image: string): Promise<Import
         },
       ],
       temperature: 0.3,
-    });
+    }, { vision: true });
 
-    const content = response.choices[0]?.message?.content;
     if (!content) {
       return { ok: false, message: 'Sin respuesta del modelo' };
     }
@@ -120,7 +118,7 @@ export async function importFromImageAction(base64Image: string): Promise<Import
   } catch (err) {
     return {
       ok: false,
-      message: err instanceof Error ? err.message : 'Error al extraer la receta de la imagen',
+      message: aiErrorMessage(err, 'Error al extraer la receta de la imagen'),
     };
   }
 }
@@ -154,8 +152,7 @@ export async function importFromUrlAction(url: string): Promise<ImportResult> {
     }
 
     try {
-      const response = await groq.chat.completions.create({
-        model: GROQ_MODEL,
+      const content = await groqChat(groq, {
         messages: [
           { role: 'system', content: buildImportSystemPrompt('link') },
           {
@@ -166,7 +163,6 @@ export async function importFromUrlAction(url: string): Promise<ImportResult> {
         temperature: 0.3,
       });
 
-      const content = response.choices[0]?.message?.content;
       if (!content) {
         return { ok: false, message: 'Sin respuesta del modelo' };
       }
@@ -175,7 +171,7 @@ export async function importFromUrlAction(url: string): Promise<ImportResult> {
     } catch (err) {
       return {
         ok: false,
-        message: err instanceof Error ? err.message : 'Error al extraer la receta del video',
+        message: aiErrorMessage(err, 'Error al extraer la receta del video'),
       };
     }
   }
@@ -211,8 +207,7 @@ export async function importFromUrlAction(url: string): Promise<ImportResult> {
   }
 
   try {
-    const response = await groq.chat.completions.create({
-      model: GROQ_MODEL,
+    const content = await groqChat(groq, {
       messages: [
         { role: 'system', content: buildImportSystemPrompt('link') },
         {
@@ -223,7 +218,6 @@ export async function importFromUrlAction(url: string): Promise<ImportResult> {
       temperature: 0.3,
     });
 
-    const content = response.choices[0]?.message?.content;
     if (!content) {
       return { ok: false, message: 'Sin respuesta del modelo' };
     }
@@ -232,7 +226,7 @@ export async function importFromUrlAction(url: string): Promise<ImportResult> {
   } catch (err) {
     return {
       ok: false,
-      message: err instanceof Error ? err.message : 'Error al extraer la receta del enlace',
+      message: aiErrorMessage(err, 'Error al extraer la receta del enlace'),
     };
   }
 }
@@ -254,8 +248,7 @@ export async function importFromTextAction(text: string): Promise<ImportResult> 
   }
 
   try {
-    const response = await groq.chat.completions.create({
-      model: GROQ_MODEL,
+    const content = await groqChat(groq, {
       messages: [
         { role: 'system', content: buildImportSystemPrompt('text') },
         {
@@ -266,7 +259,6 @@ export async function importFromTextAction(text: string): Promise<ImportResult> 
       temperature: 0.3,
     });
 
-    const content = response.choices[0]?.message?.content;
     if (!content) {
       return { ok: false, message: 'Sin respuesta del modelo' };
     }
@@ -275,7 +267,7 @@ export async function importFromTextAction(text: string): Promise<ImportResult> 
   } catch (err) {
     return {
       ok: false,
-      message: err instanceof Error ? err.message : 'Error al extraer la receta del texto',
+      message: aiErrorMessage(err, 'Error al extraer la receta del texto'),
     };
   }
 }

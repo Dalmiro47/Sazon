@@ -1,6 +1,6 @@
 'use server';
 
-import { createGroqClient, GROQ_MODEL } from '@/lib/groq';
+import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import { ALLOWED_CATEGORIES, ALLOWED_UNITS } from '@/types/constants';
 import type { RecipePayload } from '@/types/recipe';
 
@@ -49,8 +49,7 @@ Reglas:
 - Devuelve SOLO JSON válido, sin markdown ni texto extra. Todo en español.`;
 
   try {
-    const response = await grok.chat.completions.create({
-      model: GROQ_MODEL,
+    const content = await groqChat(grok, {
       messages: [
         { role: 'system', content: systemPrompt },
         {
@@ -61,7 +60,6 @@ Reglas:
       temperature: 0.7,
     });
 
-    const content = response.choices[0]?.message?.content;
     if (!content) return { ok: false, message: 'Sin respuesta del modelo' };
 
     const jsonStr = content.replace(/```json?\n?/g, '').replace(/```\n?/g, '').trim();
@@ -71,7 +69,7 @@ Reglas:
   } catch (err) {
     return {
       ok: false,
-      message: err instanceof Error ? err.message : 'Error al refinar la receta',
+      message: aiErrorMessage(err, 'Error al refinar la receta'),
     };
   }
 }
