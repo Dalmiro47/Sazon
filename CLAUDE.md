@@ -1,15 +1,11 @@
 ## Constraints
 
-Read and follow `CONSTRAINTS.md` at the repo root before every task. It defines:
-- What you must never do (Section 1)
-- When to stop and ask (Section 2)
-- How to resolve goal vs. constraint conflicts (Section 3)
-- Session hygiene rules (Section 4)
-- Where project rules live, the factory git exception and shared app rules (Section 5); this repo's own rules are under `## Project constraints` below
-
-CONSTRAINTS.md rules are non-negotiable. If a task conflicts with a constraint, stop and surface the conflict — do not silently resolve it.
+Universal rules (`CONSTRAINTS.md`) load through the dds plugin import in `~/.claude/CLAUDE.md`; this repo has no copy. This repo's rules are under `## Project constraints`. These rules are non-negotiable: if a task conflicts with one, stop and surface the conflict, never resolve it silently.
 
 # Sazón — Household Recipe App
+
+Recipes, AI import and suggestions, and a cooking chat that proposes an improved recipe after each cook.
+All user-facing text is in Spanish.
 
 ## Commands
 ```bash
@@ -20,119 +16,86 @@ npx tsc --noEmit     # TypeScript check (run before every commit)
 npx tsc --noEmit && npm run lint  # Full pre-commit validation
 ```
 
-## Stack
-- Next.js 14 App Router + TypeScript + Tailwind CSS
-- Supabase (shared instance with Open Brain project)
-- Shadcn UI (components in src/components/ui/)
-- Groq API (via OpenAI SDK, key `GROK_API_KEY`) — `qwen/qwen3.8-27b` for text + vision with `reasoning_effort: 'none'`; text-only fallback `openai/gpt-oss-120b`; all calls go through `groqChat()` in `src/lib/groq.ts`
+## Stack and environment
+- Next.js 14 App Router, TypeScript, Tailwind CSS, Shadcn UI (`src/components/ui/`)
+- Supabase: the production Supabase project is shared with Open Brain
+- Groq via the OpenAI SDK, all calls through `groqChat()` in `src/lib/groq.ts`: `qwen/qwen3.8-27b` for text + vision with `reasoning_effort: 'none'`; text-only fallback `openai/gpt-oss-120b` with `'low'` (ADR-8)
+- `.env.local` names: `GROK_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_PIN`
 
-## Coding Standards
-- No `any` — use interfaces from `src/types/`
-- Absolute imports — use `@/components/...`, `@/lib/...`, `@/types/...`
-- Server Components by default — add `'use client'` only for hooks/event listeners
-- Shadcn UI: add components via `npx shadcn@latest add [component-name]`; icon size standard is `size={20}`
-- Radix Select bug: never set initial value via `useEffect` + `setState` — Radix fixes its internal state on first render. Use `useState(() => ...)` lazy initializer to read from localStorage/props synchronously before first render.
-- Mobile-first: design for 375px+, then adapt with `md:` / `lg:` Tailwind prefixes
-- TypeScript check before done: always run `npx tsc --noEmit` before declaring a task complete
+## Map
+- `src/app/`: routes; `actions/` holds the server actions; `/auth` plus `src/middleware.ts` is the PIN gate
+- `src/lib/`: `validate-recipe.ts`, `sanitize-import.ts`, `import-recipe-prompt.ts`, `slugify.ts`, `html-to-text.ts` (no npm dep, truncates at 8000 chars; ADR-4), `supabase/`
+- `src/components/recipe/`: feature components
+- `src/types/`: `recipe.ts` (row and JSONB shapes), `constants.ts` (categories, units)
+- `supabase/migrations/`: columns and DB checks; app-level limits are in `src/lib/validate-recipe.ts`
+- `next.config.mjs`: `serverActions.bodySizeLimit: '5mb'` for image payloads
+- `tests/playwright/`; `/playwright` (`.claude/commands/playwright.md`) runs the suite for the current feature, creates a spec if none exists, auto-corrects until all pass
+- `/dds:brain-sync`: dds-kit plugin skill, captures a session-state milestone
+- `.claude/dds-guard.json`: Supabase command guard
+- `docs/decisions.md`: the whys (ADR-n); `docs/future-improvements.md`: pending ideas
 
-## Database (Supabase)
-- Use Supabase client from `@/lib/supabase/server` for Server Components and Server Actions
-- Use Supabase client from `@/lib/supabase/browser` for Client Components
-- Use admin client from `@/lib/supabase/admin` for service-role operations
-- `updated_at` is owned by a DB trigger — never set it manually in application code
-- Avoid N+1 patterns — use joins or batch queries
+## Glossary
+- **Cooking session**: AI chat while cooking one recipe (`cooking_sessions`); ends in a summary and an improved-recipe proposal
+- **Fit/fat tag**: `fat` if > 450 kcal per serving, or > 20 g fat, or indulgent ingredients; `fit` if ≤ 450 kcal and ≤ 20 g fat and mainly lean protein, vegetables, legumes or whole grains; in doubt, `fat`
+- **Import modes** (`/recipes/import`): Foto (vision model, base64 ≤ 4MB), Enlace (server-side fetch + HTML strip, or the transcript of a YouTube link), Texto (raw paste ≤ 10k chars)
+- **Slug**: unique URL id built from the name; soft-deleted rows keep theirs, so they still collide
+- **Soft delete**: `deleted_at` set on the row; null = active
+- **Macros**: `*_per_serving` calories, protein, fat, carbs; nullable, ≥ 0; LLM-estimated (ADR-3)
 
-## Data Model — recipes table
-```sql
-id                   uuid PK default gen_random_uuid()
-name                 text NOT NULL (2-300 chars)
-slug                 text UNIQUE NOT NULL (auto-generated, immutable after creation)
-category             text NOT NULL — enum: main, starter, dessert, snack, breakfast, side, sauce, drink
-servings             integer NOT NULL default 2 (1-100)
-source               text (max 200 chars)
-ingredients          jsonb NOT NULL default '[]' — array of Ingredient objects
-steps                jsonb NOT NULL default '[]' — array of RecipeStep objects
-notes                text (max 10,000 chars)
-tags                 text[] NOT NULL default '{}' (max 20 tags, each 1-50 chars, lowercased)
-image_url            text (must start with http:// or https://, max 2000 chars)
-calories_per_serving numeric (≥ 0, nullable)
-protein_per_serving  numeric (≥ 0, nullable)
-fat_per_serving      numeric (≥ 0, nullable)
-carbs_per_serving    numeric (≥ 0, nullable)
-created_at           timestamptz NOT NULL default now()
-updated_at           timestamptz NOT NULL default now() — DB trigger only
-deleted_at           timestamptz NULL default null — soft delete; null = active
-```
+## Standards
 
-## Data Model — cooking_sessions table
-```sql
-id         uuid PK default gen_random_uuid()
-recipe_id  uuid NOT NULL references recipes(id) on delete cascade
-messages   jsonb NOT NULL default '[]' — array of SessionMessage objects
-summary    text (set once at end of session, never updated)
-cooked_at  timestamptz NOT NULL default now()
-```
-No `updated_at` — sessions are append-only; summary is set once.
+**App language:** all user-facing text must be in Spanish: UI labels, buttons, error messages, validation feedback, placeholder text, toast notifications. Code comments and variable names remain in English.
 
-### SessionMessage schema (JSONB element)
-```typescript
-{ role: 'user' | 'assistant', content: string }
-```
+**Code**
+- No `any`: use interfaces from `src/types/`. Absolute imports: `@/components/...`, `@/lib/...`, `@/types/...`
+- Server Components by default; `'use client'` only for hooks/event listeners
+- Add Shadcn components via `npx shadcn@latest add [component-name]`. New icons use `size={20}`; existing icons drift (mostly 16)
+- Mobile-first: design for 375px+, then adapt with `md:` / `lg:`
+- Always run `npx tsc --noEmit` before declaring a task complete
 
-### Ingredient schema (JSONB element)
-```typescript
-{ qty: number | null, unit: string | null, name: string, note?: string }
-```
-Invariant: if `qty` is null, `unit` MUST also be null.
+**Database**
+- Use `@/lib/supabase/server` for Server Components and Server Actions, `@/lib/supabase/browser` for Client Components, `@/lib/supabase/admin` for service-role operations
+- Today the recipe and session actions and the `/recipes/[slug]` pages use admin, `suggest-recipe.ts` and `suggest-ideas.ts` use server, nothing imports browser
+- RLS is enabled on both tables; there are no policies, so only the service-role client on the server can reach them
+- `updated_at` is owned by a DB trigger: never set it in application code
+- Avoid N+1: use joins or batch queries
 
-### RecipeStep schema (JSONB element)
-```typescript
-{ order: number, title: string, content: string, timer?: number }
-```
-Order is renormalized to [1, 2, 3, ...] server-side before every write.
+**Recipe writes**
+- `validateRecipePayload()` is one shared function, zero duplication; its only caller is `upsertRecipeAction`, which every write path uses
+- Slug is always generated server-side from name, never typed or sent by the caller, immutable after creation; stripped from UPDATE payloads in code, not by convention; collisions auto-append `-2`, `-3`, ... on every create path
+- `ingredients` and `steps` are atomic on update: full replace or untouched, no element merge
+- If `qty` is null, `unit` MUST be null. Step order is renormalized to [1, 2, 3, ...] server-side before every write
 
-## Spec Guardrails
-- `validateRecipePayload()` is a single shared function — zero duplication between callers
-- Slug is always auto-generated server-side from name — never typed or sent by the caller
-- Slug is stripped from UPDATE payload before DB write — enforced in code, not by convention
-- `updated_at` is never set manually — DB trigger only
-- Servings scaling is UI-only — no scaled value ever enters a Server Action call
-- Step done-state is `localStorage` key `recipe-progress-{slug}` — no server involvement
-- `ingredients` and `steps` are atomic on update — full replace or untouched, no element merge
-- Slug collision resolution: auto-append `-2`, `-3`, ... for both callers
-- Macro fields (`*_per_serving`) validated server-side only — never use `min={0}` on HTML inputs (browser shows English errors); let server return Spanish validation messages
-- Session messages are append-only — always write the full updated array, never partial updates
-- `endSessionAction` returns an improved recipe proposal — never auto-saves; user must confirm via `upsertRecipeAction`
-- Active cooking session is persisted in `localStorage` key `cooking-session-{recipeId}` — auto-resumed on page load, cleared when session ends
-- Previous session summaries for the same recipe are injected into the AI system prompt so knowledge accumulates across cooks
-- Markdown in AI chat responses is rendered via a custom inline renderer (no library) — handles `**bold**`, `*italic*`, bullet/numbered lists
-- `sanitizeImportedRecipe()` in `src/lib/sanitize-import.ts` is the single post-processing step for all AI-extracted recipes — normalizes units, categories, and filters empty rows; always call it after JSON.parse in import actions
-- Imported recipe draft is passed to RecipeForm via `localStorage` key `import-recipe-draft` — set before `router.push('/recipes/new')`, read+cleared on mount (only when `recipe` prop is undefined)
-- AI always assigns `"fit"` or `"fat"` tag to every recipe (import + suggest) — "fit" = low cal/high protein, "fat" = indulgent/high fat; grid has filter chips for both
+**Cooking sessions**
+- Append-only, no `updated_at`: always write the full `messages` array, never partial updates; `summary` is set once at session end, never updated
+- `endSessionAction` returns a proposal, never auto-saves; the user must confirm via `upsertRecipeAction` (ADR-6)
+- The latest 5 session summaries of the recipe go into the AI system prompt so knowledge accumulates across cooks (ADR-7)
+- Chat markdown uses a custom inline renderer, no library: `**bold**`, `*italic*`, bullet/numbered lists (ADR-1)
 
-## Recipe Import (`/recipes/import`)
-- Three input modes — Foto (vision model, base64 ≤ 4MB), Enlace (server-side fetch + HTML strip), Texto (raw paste ≤ 10k chars)
-- `next.config.mjs` sets `serverActions.bodySizeLimit: '5mb'` for image payloads
-- Shared prompt in `src/lib/import-recipe-prompt.ts` — same schema for all 3 modes; always estimates macros and assigns fit/fat tag
-- HTML stripping for URLs via `src/lib/html-to-text.ts` (no npm dep, truncates at 8000 chars)
+**Import and AI**
+- `sanitizeImportedRecipe()` in `src/lib/sanitize-import.ts` is the single post-processing step for AI-extracted recipes: normalizes units and categories, filters empty rows; always call it after JSON.parse in import actions. Suggest, refine and session-end output skips it and meets the validator on save
+- `src/lib/import-recipe-prompt.ts` is shared: same schema for all 3 modes; always estimates macros and assigns fit/fat
+- AI always assigns `fit` or `fat` to every recipe (import, suggest, refine) and idea; the grid has filter chips for both
 
-## Playwright
-- Never run Playwright tests unless explicitly instructed with the phrase "run playwright"
-- Never add Playwright test runs to the default dev workflow or pre-commit hooks
-- Tests live in /tests/playwright/ and are only executed on demand
-- Always use assertion/test spec mode (pass/fail) — never screenshot-only mode
-- Screenshot approach is prohibited: Claude reads test output directly, no human review loop needed
+**Browser state**
+- Servings scaling is UI-only: no scaled value ever enters a Server Action call
+- `recipe-progress-{slug}`: step done-state in `localStorage`, no server involvement
+- `cooking-session-{recipeId}`: active session in `localStorage`, auto-resumed on page load, cleared when the session ends
+- `import-recipe-draft`: draft for RecipeForm in `localStorage`, set before `router.push('/recipes/new')`, read+cleared on mount only when the `recipe` prop is undefined
 
-## App Language
-All user-facing text in the app must be in Spanish — UI labels, buttons, error messages, validation feedback, placeholder text, and toast notifications. Code comments and variable names remain in English.
+**Playwright**
+- Never run tests unless explicitly instructed with the phrase "run playwright"; never add runs to the default dev workflow or pre-commit hooks
+- Tests live in `/tests/playwright/` and run only on demand
+- Always assertion/test spec mode (pass/fail), never screenshot-only; the screenshot approach is prohibited: Claude reads test output directly, no human review loop
 
-## Custom Commands
-- `/playwright` — runs Playwright test suite for current feature; creates spec if none exists; auto-corrects until all pass
+**Session workflow:** work on the feature/fix. When work is done, remind the owner to run `/playwright` (or say "run playwright"). `/dds:brain-sync` runs when the owner asks; every task prompt asks for it before the commit.
 
-## Session Workflow
-1. Work on feature/fix
-2. Run `/playwright` when implementation is done
-3. Run `/dds:brain-sync` before ending the session
+### Gotchas (learned the hard way)
+- Radix Select: never set the initial value via `useEffect` + `setState`; use a `useState(() => ...)` lazy initializer (ADR-5)
+- Macro inputs: validated server-side only, never `min={0}` on the HTML input (ADR-2)
+- `GROK_API_KEY` is the Groq key, despite the spelling
+- Vision has no fallback: `gpt-oss-120b` cannot read images (ADR-8)
+- Playwright `baseURL` is port 3001 with no `webServer`, while `npm run dev` defaults to 3000: the app must already be running on 3001
 
 ## Project constraints
 - Constraints are hard guardrails, not problems to solve
@@ -161,10 +124,6 @@ All user-facing text in the app must be in Spanish — UI labels, buttons, error
 - Minimum viable plan: match the stated UX outcome with the minimum change needed
 - Do not add scope (refactors, extra configurability) unless explicitly asked
 - When proposing UX changes, separate effects/polish (welcome) from structural/layout changes (require explicit approval)
-
-## Skills
-
-`/dds:brain-sync` (shared skill from the dds-kit plugin) captures a session-state milestone to Open Brain via the `capture_thought` MCP tool.
 
 ## Brain sync
 
