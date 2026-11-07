@@ -1,6 +1,8 @@
 'use server';
 
 import { YoutubeTranscript } from 'youtube-transcript';
+import { requireAuth } from '@/lib/auth';
+import { AUTH_ERROR_MESSAGE } from '@/lib/auth-pin';
 import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import { buildImportSystemPrompt } from '@/lib/import-recipe-prompt';
 import { htmlToText } from '@/lib/html-to-text';
@@ -76,6 +78,8 @@ function parseRecipeJson(content: string): RecipePayload {
 }
 
 export async function importFromImageAction(base64Image: string): Promise<ImportResult> {
+  if (!requireAuth()) return { ok: false, message: AUTH_ERROR_MESSAGE };
+
   if (!base64Image) {
     return { ok: false, message: 'No se proporcionó ninguna imagen' };
   }
@@ -124,6 +128,8 @@ export async function importFromImageAction(base64Image: string): Promise<Import
 }
 
 export async function importFromUrlAction(url: string): Promise<ImportResult> {
+  if (!requireAuth()) return { ok: false, message: AUTH_ERROR_MESSAGE };
+
   if (!url.trim()) {
     return { ok: false, message: 'No se proporcionó ningún enlace' };
   }
@@ -232,6 +238,8 @@ export async function importFromUrlAction(url: string): Promise<ImportResult> {
 }
 
 export async function importFromTextAction(text: string): Promise<ImportResult> {
+  if (!requireAuth()) return { ok: false, message: AUTH_ERROR_MESSAGE };
+
   if (!text.trim()) {
     return { ok: false, message: 'No se proporcionó ningún texto' };
   }

@@ -5,9 +5,10 @@ const nextConfig = {
       bodySizeLimit: '5mb',
       allowedOrigins: [
         'localhost:3000',
-        // GitHub Codespaces / forwarded proxy hosts
-        '*.app.github.dev',
-        '*.githubpreview.dev',
+        // GitHub Codespaces / forwarded proxy hosts: development only
+        ...(process.env.NODE_ENV !== 'production'
+          ? ['*.app.github.dev', '*.githubpreview.dev']
+          : []),
       ],
     },
   },

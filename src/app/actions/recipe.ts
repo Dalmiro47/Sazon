@@ -1,5 +1,7 @@
 'use server';
 
+import { requireAuth } from '@/lib/auth';
+import { AUTH_ERROR_MESSAGE } from '@/lib/auth-pin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { slugify } from '@/lib/slugify';
 import { validateRecipePayload } from '@/lib/validate-recipe';
@@ -9,12 +11,17 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 const PAGE_SIZE = 16;
 
+const DB_ERROR_MESSAGE = 'No se pudo guardar la receta. Inténtalo de nuevo.';
+const DELETE_ERROR_MESSAGE = 'No se pudo eliminar la receta. Inténtalo de nuevo.';
+
 export async function fetchRecipesAction(params: {
   offset?: number;
   query?: string;
   category?: string;
   fitFat?: 'fit' | 'fat';
 } = {}): Promise<{ recipes: Recipe[]; hasMore: boolean }> {
+  if (!requireAuth()) return { recipes: [], hasMore: false };
+
   const { offset = 0, query, category, fitFat } = params;
   const supabase = createAdminClient();
 
@@ -81,7 +88,9 @@ function stripImmutableFields(
 export async function upsertRecipeAction(
   payload: RecipePayload
 ): Promise<ActionResult> {
-  // TODO: requireAuth()
+  if (!requireAuth()) {
+    return { ok: false, code: 'UNAUTHORIZED', message: AUTH_ERROR_MESSAGE };
+  }
 
   const supabase = createAdminClient();
 
@@ -138,7 +147,8 @@ export async function upsertRecipeAction(
         .single();
 
       if (error) {
-        return { ok: false, code: 'DB_ERROR', message: error.message };
+        console.error('upsertRecipeAction update failed:', error.code, error.message);
+        return { ok: false, code: 'DB_ERROR', message: DB_ERROR_MESSAGE };
       }
 
       return { ok: true, recipe: recipe as Recipe, operation: 'updated' };
@@ -190,7 +200,8 @@ export async function upsertRecipeAction(
             .single();
 
           if (retryError) {
-            return { ok: false, code: 'DB_ERROR', message: retryError.message };
+            console.error('upsertRecipeAction insert retry failed:', retryError.code, retryError.message);
+            return { ok: false, code: 'DB_ERROR', message: DB_ERROR_MESSAGE };
           }
 
           return {
@@ -200,21 +211,23 @@ export async function upsertRecipeAction(
           };
         }
 
-        return { ok: false, code: 'DB_ERROR', message: error.message };
+        console.error('upsertRecipeAction insert failed:', error.code, error.message);
+        return { ok: false, code: 'DB_ERROR', message: DB_ERROR_MESSAGE };
       }
 
       return { ok: true, recipe: recipe as Recipe, operation: 'created' };
     }
   } catch (err) {
-    return {
-      ok: false,
-      code: 'DB_ERROR',
-      message: err instanceof Error ? err.message : 'Unknown error',
-    };
+    console.error('upsertRecipeAction failed:', err instanceof Error ? err.message : err);
+    return { ok: false, code: 'DB_ERROR', message: DB_ERROR_MESSAGE };
   }
 }
 
 export async function deleteRecipeAction(id: string): Promise<DeleteResult> {
+  if (!requireAuth()) {
+    return { ok: false, code: 'UNAUTHORIZED', message: AUTH_ERROR_MESSAGE };
+  }
+
   const supabase = createAdminClient();
 
   const { data: existing } = await supabase
@@ -234,7 +247,8 @@ export async function deleteRecipeAction(id: string): Promise<DeleteResult> {
     .eq('id', id);
 
   if (error) {
-    return { ok: false, code: 'DB_ERROR', message: error.message };
+    console.error('deleteRecipeAction failed:', error.code, error.message);
+    return { ok: false, code: 'DB_ERROR', message: DELETE_ERROR_MESSAGE };
   }
 
   return { ok: true };

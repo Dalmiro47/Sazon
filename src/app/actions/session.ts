@@ -1,9 +1,13 @@
 'use server';
 
+import { requireAuth } from '@/lib/auth';
+import { AUTH_ERROR_MESSAGE } from '@/lib/auth-pin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import type { Recipe, RecipePayload, SessionMessage, SessionChatResult, SessionEndResult } from '@/types/recipe';
 import type { ActionError } from '@/types/actions';
+
+const SESSION_DB_ERROR_MESSAGE = 'No se pudo guardar la sesión. Inténtalo de nuevo.';
 
 interface StartSessionResult {
   ok: true;
@@ -40,7 +44,9 @@ ${recipe.notes ? `Notas: ${recipe.notes}` : ''}`;
 export async function startSessionAction(
   recipeId: string
 ): Promise<StartSessionResult | ActionError> {
-  // TODO: requireAuth()
+  if (!requireAuth()) {
+    return { ok: false, code: 'UNAUTHORIZED', message: AUTH_ERROR_MESSAGE };
+  }
 
   const supabase = createAdminClient();
 
@@ -63,7 +69,8 @@ export async function startSessionAction(
     .single();
 
   if (error) {
-    return { ok: false, code: 'DB_ERROR', message: error.message };
+    console.error('startSessionAction failed:', error.code, error.message);
+    return { ok: false, code: 'DB_ERROR', message: SESSION_DB_ERROR_MESSAGE };
   }
 
   return { ok: true, sessionId: session.id };
@@ -73,7 +80,9 @@ export async function chatInSessionAction(
   sessionId: string,
   userMessage: string
 ): Promise<SessionChatResult | ActionError> {
-  // TODO: requireAuth()
+  if (!requireAuth()) {
+    return { ok: false, code: 'UNAUTHORIZED', message: AUTH_ERROR_MESSAGE };
+  }
 
   if (!userMessage.trim()) {
     return { ok: false, code: 'VALIDATION_ERROR', message: 'El mensaje no puede estar vacío' };
@@ -178,7 +187,8 @@ Responde en español.`;
       .eq('id', sessionId);
 
     if (updateError) {
-      return { ok: false, code: 'DB_ERROR', message: updateError.message };
+      console.error('chatInSessionAction update failed:', updateError.code, updateError.message);
+      return { ok: false, code: 'DB_ERROR', message: SESSION_DB_ERROR_MESSAGE };
     }
 
     return { ok: true, reply, sessionId };
@@ -194,7 +204,9 @@ Responde en español.`;
 export async function endSessionAction(
   sessionId: string
 ): Promise<SessionEndResult | ActionError> {
-  // TODO: requireAuth()
+  if (!requireAuth()) {
+    return { ok: false, code: 'UNAUTHORIZED', message: AUTH_ERROR_MESSAGE };
+  }
 
   const supabase = createAdminClient();
 
@@ -313,6 +325,8 @@ ${conversationText}`;
 export async function getSessionAction(
   sessionId: string
 ): Promise<{ messages: SessionMessage[] } | null> {
+  if (!requireAuth()) return null;
+
   const supabase = createAdminClient();
   const { data } = await supabase
     .from('cooking_sessions')

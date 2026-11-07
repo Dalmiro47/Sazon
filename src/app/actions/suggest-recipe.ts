@@ -1,7 +1,9 @@
 'use server';
 
 import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
-import { createClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/auth';
+import { AUTH_ERROR_MESSAGE } from '@/lib/auth-pin';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type { RecipePayload } from '@/types/recipe';
 import { ALLOWED_CATEGORIES, ALLOWED_UNITS, CATEGORY_LABELS } from '@/types/constants';
 import type { Category } from '@/types/constants';
@@ -25,6 +27,8 @@ export interface SuggestParams {
 export async function suggestRecipeAction(
   params: SuggestParams
 ): Promise<SuggestResult | SuggestError> {
+  if (!requireAuth()) return { ok: false, message: AUTH_ERROR_MESSAGE };
+
   const { constraint, fitFat, category } = params;
   let grok: ReturnType<typeof createGroqClient>;
   try {
@@ -34,7 +38,7 @@ export async function suggestRecipeAction(
   }
 
   // Fetch existing recipes for context
-  const supabase = createClient();
+  const supabase = createAdminClient();
   let query = supabase.from('recipes').select('name, category, tags').is('deleted_at', null);
   if (category) query = query.eq('category', category);
   if (fitFat) query = query.contains('tags', [fitFat]);

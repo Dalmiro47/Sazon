@@ -1,24 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { AUTH_COOKIE, checkPin } from '@/lib/auth-pin';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow the auth page itself
-  if (pathname.startsWith('/auth')) {
+  if (pathname === '/auth' || pathname.startsWith('/auth/')) {
     return NextResponse.next();
   }
 
-  const expectedPin = process.env.AUTH_PIN?.trim();
-
-  // If no PIN is configured, allow everything (dev / non-protected deployments)
-  if (!expectedPin) {
-    return NextResponse.next();
-  }
-
-  const authCookie = request.cookies.get('sazon_auth');
-
-  if (authCookie?.value === expectedPin) {
+  // 'ok' also covers dev without AUTH_PIN; production without AUTH_PIN is 'misconfigured' and stays closed
+  if (checkPin(request.cookies.get(AUTH_COOKIE)?.value) === 'ok') {
     return NextResponse.next();
   }
 
