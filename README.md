@@ -13,7 +13,7 @@ npm run dev
 
 Then open http://localhost:3000.
 
-The app reads these variables from `.env.local`: `GROK_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_PIN`. The database schema is in [`supabase/migrations/`](supabase/migrations/).
+The app reads these variables from `.env.local`: `GROK_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_PIN`. The database schema is in [`supabase/migrations/`](supabase/migrations/).
 
 ## Map
 
@@ -22,6 +22,5 @@ The app reads these variables from `.env.local`: `GROK_API_KEY`, `NEXT_PUBLIC_SU
 - [`docs/future-improvements.md`](docs/future-improvements.md): pending ideas
 - [`src/app/`](src/app/): routes and server actions
 - [`src/components/`](src/components/): recipe components and UI components
-- [`src/lib/`](src/lib/): Groq client, validation, import helpers, Supabase clients
+- [`src/lib/`](src/lib/): Groq client, validation, import helpers, PIN auth, Supabase admin client
 - [`src/types/`](src/types/): shared types and constants
-- [`tests/playwright/`](tests/playwright/): end-to-end tests

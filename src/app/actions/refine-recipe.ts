@@ -1,5 +1,7 @@
 'use server';
 
+import { requireAuth } from '@/lib/auth';
+import { AUTH_ERROR_MESSAGE } from '@/lib/auth-pin';
 import { aiErrorMessage, createGroqClient, groqChat } from '@/lib/groq';
 import { ALLOWED_CATEGORIES, ALLOWED_UNITS } from '@/types/constants';
 import type { RecipePayload } from '@/types/recipe';
@@ -18,6 +20,8 @@ export async function refineRecipeAction(
   current: RecipePayload,
   modification: string
 ): Promise<RefineResult | RefineError> {
+  if (!requireAuth()) return { ok: false, message: AUTH_ERROR_MESSAGE };
+
   let grok: ReturnType<typeof createGroqClient>;
   try {
     grok = createGroqClient();

@@ -79,3 +79,17 @@ The whys behind the rules in [CLAUDE.md](../CLAUDE.md). Each date is the commit 
 - **Decision:** Following the dds-kit 0.9 standard, CLAUDE.md is a map, gotchas take one line each, longer whys live in this file, and README.md is a short map.
 - **Why:** None recorded beyond the standard.
 - **Alternatives:** None recorded.
+
+## ADR-12: PIN check in every Server Action, closed in production without a PIN
+
+- **Date:** 2026-11-07
+- **Decision:** Every Server Action except `loginAction` and `logoutAction` calls `requireAuth()` (`src/lib/auth.ts`) first. Middleware and actions share `checkPin()` from `src/lib/auth-pin.ts`. When `AUTH_PIN` is unset, `NODE_ENV === 'production'` keeps the app closed (redirect to `/auth`); dev stays open.
+- **Why:** The actions use the service-role client, so the check must not depend on the middleware alone. Middleware runs on Edge, with no `next/headers` and no `node:crypto`: hence a separate pure helper file and a plain-JS constant-time compare. `NODE_ENV` works on any host and also closes preview builds.
+- **Alternatives:** Rejected: `VERCEL_ENV` (exists only on Vercel); a 503 when `AUTH_PIN` is missing (the redirect keeps the friendly `/auth` page); one `auth.ts` imported by the middleware.
+
+## ADR-13: No end-to-end test suite
+
+- **Date:** 2026-11-07
+- **Decision:** Playwright was removed: the dependency, its config, the specs and the `/playwright` command. The owner tests by hand after deploy.
+- **Why:** The owner does not use it.
+- **Alternatives:** None recorded.

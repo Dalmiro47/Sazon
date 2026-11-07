@@ -20,16 +20,15 @@ npx tsc --noEmit && npm run lint  # Full pre-commit validation
 - Next.js 14 App Router, TypeScript, Tailwind CSS, Shadcn UI (`src/components/ui/`)
 - Supabase: the production Supabase project is shared with Open Brain
 - Groq via the OpenAI SDK, all calls through `groqChat()` in `src/lib/groq.ts`: `qwen/qwen3.8-27b` for text + vision with `reasoning_effort: 'none'`; text-only fallback `openai/gpt-oss-120b` with `'low'` (ADR-8)
-- `.env.local` names: `GROK_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_PIN`
+- `.env.local` names: `GROK_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_PIN`
 
 ## Map
 - `src/app/`: routes; `actions/` holds the server actions; `/auth` plus `src/middleware.ts` is the PIN gate
-- `src/lib/`: `validate-recipe.ts`, `sanitize-import.ts`, `import-recipe-prompt.ts`, `slugify.ts`, `html-to-text.ts` (no npm dep, truncates at 8000 chars; ADR-4), `supabase/`
+- `src/lib/`: `validate-recipe.ts`, `sanitize-import.ts`, `import-recipe-prompt.ts`, `slugify.ts`, `html-to-text.ts` (no npm dep, truncates at 8000 chars; ADR-4), `auth.ts` (`requireAuth()`), `auth-pin.ts` (Edge-safe PIN helpers), `supabase/`
 - `src/components/recipe/`: feature components
 - `src/types/`: `recipe.ts` (row and JSONB shapes), `constants.ts` (categories, units)
 - `supabase/migrations/`: columns and DB checks; app-level limits are in `src/lib/validate-recipe.ts`
 - `next.config.mjs`: `serverActions.bodySizeLimit: '5mb'` for image payloads
-- `tests/playwright/`; `/playwright` (`.claude/commands/playwright.md`) runs the suite for the current feature, creates a spec if none exists, auto-corrects until all pass
 - `/dds:brain-sync`: dds-kit plugin skill, captures a session-state milestone
 - `.claude/dds-guard.json`: Supabase command guard
 - `docs/decisions.md`: the whys (ADR-n); `docs/future-improvements.md`: pending ideas
@@ -52,10 +51,11 @@ npx tsc --noEmit && npm run lint  # Full pre-commit validation
 - Add Shadcn components via `npx shadcn@latest add [component-name]`. New icons use `size={20}`; existing icons drift (mostly 16)
 - Mobile-first: design for 375px+, then adapt with `md:` / `lg:`
 - Always run `npx tsc --noEmit` before declaring a task complete
+- Every Server Action except `loginAction`/`logoutAction` starts with `if (!requireAuth())` and returns its own error shape with `AUTH_ERROR_MESSAGE` (ADR-12)
 
 **Database**
-- Use `@/lib/supabase/server` for Server Components and Server Actions, `@/lib/supabase/browser` for Client Components, `@/lib/supabase/admin` for service-role operations
-- Today the recipe and session actions and the `/recipes/[slug]` pages use admin, `suggest-recipe.ts` and `suggest-ideas.ts` use server, nothing imports browser
+- Use `@/lib/supabase/admin` for all DB access, on the server only; there is no anon server or browser client
+- Never return a raw DB `error.message` to the client: `console.error` its `code` and `message`, return a short Spanish message
 - RLS is enabled on both tables; there are no policies, so only the service-role client on the server can reach them
 - `updated_at` is owned by a DB trigger: never set it in application code
 - Avoid N+1: use joins or batch queries
@@ -83,19 +83,14 @@ npx tsc --noEmit && npm run lint  # Full pre-commit validation
 - `cooking-session-{recipeId}`: active session in `localStorage`, auto-resumed on page load, cleared when the session ends
 - `import-recipe-draft`: draft for RecipeForm in `localStorage`, set before `router.push('/recipes/new')`, read+cleared on mount only when the `recipe` prop is undefined
 
-**Playwright**
-- Never run tests unless explicitly instructed with the phrase "run playwright"; never add runs to the default dev workflow or pre-commit hooks
-- Tests live in `/tests/playwright/` and run only on demand
-- Always assertion/test spec mode (pass/fail), never screenshot-only; the screenshot approach is prohibited: Claude reads test output directly, no human review loop
-
-**Session workflow:** work on the feature/fix. When work is done, remind the owner to run `/playwright` (or say "run playwright"). `/dds:brain-sync` runs when the owner asks; every task prompt asks for it before the commit.
+**Session workflow:** work on the feature/fix. `/dds:brain-sync` runs when the owner asks; every task prompt asks for it before the commit.
 
 ### Gotchas (learned the hard way)
 - Radix Select: never set the initial value via `useEffect` + `setState`; use a `useState(() => ...)` lazy initializer (ADR-5)
 - Macro inputs: validated server-side only, never `min={0}` on the HTML input (ADR-2)
 - `GROK_API_KEY` is the Groq key, despite the spelling
 - Vision has no fallback: `gpt-oss-120b` cannot read images (ADR-8)
-- Playwright `baseURL` is port 3001 with no `webServer`, while `npm run dev` defaults to 3000: the app must already be running on 3001
+- Middleware runs on Edge: import only `@/lib/auth-pin` there, never `@/lib/auth` (`next/headers`) or `node:crypto` (ADR-12)
 
 ## Project constraints
 - Constraints are hard guardrails, not problems to solve

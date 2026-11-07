@@ -2,7 +2,7 @@ import { Recipe } from './recipe';
 
 export interface ActionError {
   ok: false;
-  code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'SLUG_CONFLICT' | 'DB_ERROR';
+  code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'SLUG_CONFLICT' | 'DB_ERROR' | 'UNAUTHORIZED';
   message: string;
   fields?: Record<string, string>;
 }
